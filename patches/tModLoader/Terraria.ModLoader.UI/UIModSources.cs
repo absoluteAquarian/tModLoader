@@ -19,6 +19,7 @@ namespace Terraria.ModLoader.UI
 	{
 		private readonly List<UIModSourceItem> _items = new List<UIModSourceItem>();
 		private UIList _modList;
+		private float modListViewPosition;
 		private bool _updateNeeded;
 		private UIElement _uIElement;
 		private UIPanel _uIPanel;
@@ -133,8 +134,12 @@ namespace Terraria.ModLoader.UI
 
 		private void OpenSources(UIMouseEvent evt, UIElement listeningElement) {
 			Main.PlaySound(10, -1, -1, 1);
-			Directory.CreateDirectory(ModCompile.ModSourcePath);
-			Process.Start(ModCompile.ModSourcePath);
+			try {
+				Directory.CreateDirectory(ModCompile.ModSourcePath);
+				Utils.OpenFolder(ModCompile.ModSourcePath);
+			} catch(Exception e) {
+				Logging.tML.Error(e);
+			}
 		}
 
 		private void BuildMods(UIMouseEvent evt, UIElement listeningElement) {
@@ -167,6 +172,7 @@ namespace Terraria.ModLoader.UI
 			_cts?.Cancel(false);
 			_cts?.Dispose();
 			_cts = null;
+			modListViewPosition = _modList.ViewPosition;
 		}
 
 		internal void Populate() {
@@ -194,6 +200,8 @@ namespace Terraria.ModLoader.UI
 			_uIPanel.RemoveChild(_uiLoader);
 			_modList.Clear();
 			_modList.AddRange(_items);
+			Recalculate();
+			_modList.ViewPosition = modListViewPosition;
 		}
 	}
 }
