@@ -475,6 +475,7 @@ namespace Terraria.ModLoader
 			RarityLoader.Unload();
 			ModGore.Unload();
 			SoundLoader.Unload();
+			DashLoader.Unload();
 			DisposeMusic();
 			BackgroundTextureLoader.Unload();
 			UgBgStyleLoader.Unload();

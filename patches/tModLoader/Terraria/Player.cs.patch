@@ -1468,6 +1468,135 @@
  				for (int i = 0; i < num2; i++) {
  					WorldGen.KillTile_MakeTileDust(point.X, point.Y, tile);
  				}
+@@ -14325,6 +_,66 @@
+ 				}
+ 			}
+ 
++			if(whoAmI == Main.myPlayer && DashLoader.CanHitAnyNPC(this)){
++				Rectangle futureHitbox = new Rectangle((int)(position.X + velocity.X * 0.5f - 4.0f), (int)(position.Y + velocity.Y * 0.5f - 4.0f), width + 8, height + 8);
++				for(int i = 0; i < Main.maxNPCs; i++){
++					NPC npc = Main.npc[i];
++
++					if(!npc.active || npc.dontTakeDamage || npc.friendly || npc.immune[whoAmI] > 0 || (npc.aiStyle == 112 && !(npc.ai[2] <= 1f)) || !CanNPCBeHitByPlayerOrPlayerProjectile(npc))
++						continue;
++
++					if(DashLoader.CanHitNPC(this, npc) && futureHitbox.Intersects(npc.Hitbox)){
++						ModDash dash = DashLoader.GetDash(dashType);
++
++						int damage = dash.damage;
++						float knockback = dash.knockBack;
++						bool crit = false;
++
++						damage = (int)(damage * allDamage);
++
++						if(kbBuff)
++							knockback *= 1.5f;
++
++						//Apply the class bonuses
++						if(dash.melee){
++							damage = (int)(damage * meleeDamage);
++
++							if(kbGlove)
++								knockback *= 2f;
++
++							if(Main.rand.Next(100) < meleeCrit)
++								crit = true;
++						}else if(dash.ranged){
++							damage = (int)(damage * rangedDamage);
++
++							if(Main.rand.Next(100) < rangedCrit)
++								crit = true;
++						}else if(dash.magic){
++							damage = (int)(damage * magicDamage);
++
++							if(Main.rand.Next(100) < magicCrit)
++								crit = true;
++						}else if (dash.summoner)
++							damage = (int)(damage * minionDamage);
++
++						DashLoader.ModifyHitNPC(this, npc, ref damage, ref knockback, ref crit);
++
++						//Hit the NPC
++						ApplyDamageToNPC(npc, damage, knockback, (velocity.X > 0 ? 1 : -1), crit);
++
++						DashLoader.OnHitNPC(this, npc, damage, knockback, crit);
++
++						int playerImmunity = 4;
++						int npcImmunity = 6;
++
++						DashLoader.ModifyHitImmunity(this, npc, ref playerImmunity, ref npcImmunity);
++
++						npc.immune[whoAmI] = npcImmunity;
++						GiveImmuneTimeForCollisionAttack(playerImmunity);
++					}
++				}
++			}
++
+ 			if (dashDelay > 0) {
+ 				if (eocDash > 0)
+ 					eocDash--;
+@@ -14389,6 +_,11 @@
+ 					num10 = 0.94f;
+ 					num11 = 20;
+ 				}
++				else if(DashLoader.PlayerHasModDash(this)){
++					DashLoader.ModifyDashvalues(this, ref num7, ref num8, ref num10, ref num11);
++
++					DashLoader.MiddleEffects(this);
++				}
+ 
+ 				if (dash <= 0)
+ 					return;
+@@ -14519,8 +_,8 @@
+ 						}
+ 					}
+ 				}
+-				else {
+-					if (dash != 3)
++				else if (dash == 3){
++					if (dash != 3)	//Keeping this redundant check to reduce patch size
+ 						return;
+ 
+ 					int num23 = 0;
+@@ -14575,6 +_,38 @@
+ 							Main.dust[num25].fadeIn = 0.5f;
+ 						}
+ 					}
++				}else if(DashLoader.PlayerHasModDash(this)){
++					int dashDir = 0;
++					bool startDash = false;
++
++					if(dashTime > 0)
++						dashTime--;
++					if(dashTime < 0)
++						dashTime++;
++
++					if(controlRight && releaseRight){
++						if(dashTime > 0){
++							dashDir = 1;
++							startDash = true;
++							dashTime = 0;
++						}else
++							dashTime = 15;
++					}else if(controlLeft && releaseLeft){
++						if(dashTime < 0){
++							dashDir = -1;
++							startDash = true;
++							dashTime = 0;
++						}else
++							dashTime = -15;
++					}
++
++					if(startDash){
++						velocity.X = dashDir * DashLoader.GetDash(dashType).velocity;
++
++						DashLoader.BeginEffects(this);
++
++						dashDelay = -1;
++					}
+ 				}
+ 			}
+ 		}
 @@ -14837,8 +_,10 @@
  				float num5 = 0.1f;
  				if (wingsLogic == 26) {
