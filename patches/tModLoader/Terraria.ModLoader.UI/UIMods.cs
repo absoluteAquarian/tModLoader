@@ -79,8 +79,8 @@ namespace Terraria.ModLoader.UI
 			}
 
 			var uIScrollbar = new UIScrollbar {
-				Height = { Pixels = -50, Percent = 1f },
-				Top = { Pixels = 50 },
+				Height = { Pixels = ModLoader.showMemoryEstimates ? -72 : -50, Percent = 1f },
+				Top = { Pixels = ModLoader.showMemoryEstimates ? 72 : 50 },
 				HAlign = 1f
 			}.WithView(100f, 1000f);
 			uIPanel.Append(uIScrollbar);
@@ -295,7 +295,9 @@ namespace Terraria.ModLoader.UI
 			modList.ViewPosition = modListViewPosition;
 		}
 
+		public static string tooltip;
 		public override void Draw(SpriteBatch spriteBatch) {
+			tooltip = null;
 			base.Draw(spriteBatch);
 			for (int i = 0; i < _categoryButtons.Count; i++) {
 				if (_categoryButtons[i].IsMouseHovering) {
@@ -320,6 +322,20 @@ namespace Terraria.ModLoader.UI
 					UICommon.DrawHoverStringInBounds(spriteBatch, text);
 					return;
 				}
+			}
+			if (!string.IsNullOrEmpty(tooltip)) {
+				Rectangle bounds = GetDimensions().ToRectangle();
+				Vector2 stringDimensions = Main.fontMouseText.MeasureString(tooltip);
+				Vector2 vector = Main.MouseScreen + new Vector2(16f);
+				vector.X = System.Math.Min(vector.X, bounds.Right - stringDimensions.X - 16);
+				vector.Y = System.Math.Min(vector.Y, bounds.Bottom - 30);
+
+				Rectangle drawDestination = new Rectangle((int)vector.X, (int)vector.Y, (int)stringDimensions.X, (int)stringDimensions.Y);
+				Rectangle backgroundDrawDestination = drawDestination;
+				backgroundDrawDestination.Inflate(12, 12);
+				Utils.DrawInvBG(spriteBatch, backgroundDrawDestination);
+
+				Utils.DrawBorderStringFourWay(spriteBatch, Main.fontMouseText, tooltip, vector.X, vector.Y, new Color((int)Main.mouseTextColor, (int)Main.mouseTextColor, (int)Main.mouseTextColor, (int)Main.mouseTextColor), Color.Black, Vector2.Zero, 1f);
 			}
 			UILinkPointNavigator.Shortcuts.BackButtonCommand = 1;
 		}

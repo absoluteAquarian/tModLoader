@@ -108,16 +108,18 @@
  							}
  
  							if (Main.netMode == 2 && num43 == whoAmI && num44 <= 58 + player2.armor.Length + player2.dye.Length + player2.miscEquips.Length + player2.miscDyes.Length)
-@@ -482,6 +_,9 @@
+@@ -482,8 +_,11 @@
  							Main.StopSlimeRain();
  
  						Main.invasionType = reader.ReadSByte();
-+						if (!ModNet.AllowVanillaClients)
-+							WorldIO.ReceiveModData(reader);
 +
  						Main.LobbyId = reader.ReadUInt64();
  						Sandstorm.IntendedSeverity = reader.ReadSingle();
++						if (!ModNet.AllowVanillaClients && Netplay.Connection.State > 4)
++							WorldIO.ReceiveModData(reader);
  						if (Netplay.Connection.State == 3)
+ 							Netplay.Connection.State = 4;
+ 					}
 @@ -610,6 +_,9 @@
  							NetMessage.SendData(83, whoAmI, -1, null, num192);
  						}
@@ -280,8 +282,9 @@
  
  										return;
  									}
- 								case 1:
+-								case 1:
 -									if (Main.tile[num19, num20].type == 21) {
++								case byte _ when b2 % 100 == 1:
 +									if (Main.tile[num19, num20].type == 21 || b2 == 101 && TileID.Sets.BasicChest[Main.tile[num19, num20].type]) {
  										Tile tile = Main.tile[num19, num20];
  										if (tile.frameX % 36 != 0)
@@ -312,8 +315,9 @@
  
  										return;
  									}
- 								case 3:
+-								case 3:
 -									if (Main.tile[num19, num20].type == 88) {
++								case byte _ when b2 % 100 == 3:
 +									if (Main.tile[num19, num20].type == 88 || b2 == 103 && TileLoader.IsDresser(Main.tile[num19, num20].type)) {
  										Tile tile2 = Main.tile[num19, num20];
  										num19 -= tile2.frameX % 54 / 18;

@@ -1,7 +1,6 @@
 using ExampleMod.Tiles;
 using Terraria.ID;
 using Terraria.ModLoader;
-using static Terraria.ModLoader.ModContent;
 
 namespace ExampleMod.Items.Weapons
 {
@@ -12,28 +11,28 @@ namespace ExampleMod.Items.Weapons
 		}
 
 		public override void SetDefaults() {
-			item.damage = 20;
-			item.ranged = true;
-			item.width = 40;
-			item.height = 20;
-			item.useTime = 20;
-			item.useAnimation = 20;
-			item.useStyle = ItemUseStyleID.HoldingOut;
+			item.damage = 20; // Sets the item's damage. Note that projectiles shot by this weapon will use its and the used ammunition's damage added together.
+			item.ranged = true; // sets the damage type to ranged
+			item.width = 40; // hitbox width of the item
+			item.height = 20; // hitbox height of the item
+			item.useTime = 20; // The item's use time in ticks (60 ticks == 1 second.)
+			item.useAnimation = 20; // The length of the item's use animation in ticks (60 ticks == 1 second.)
+			item.useStyle = ItemUseStyleID.HoldingOut; // how you use the item (swinging, holding out, etc)
 			item.noMelee = true; //so the item's animation doesn't do damage
-			item.knockBack = 4;
-			item.value = 10000;
-			item.rare = ItemRarityID.Green;
-			item.UseSound = SoundID.Item11;
-			item.autoReuse = true;
+			item.knockBack = 4; // Sets the item's knockback. Note that projectiles shot by this weapon will use its and the used ammunition's knockback added together.
+			item.value = 10000; // how much the item sells for (measured in copper)
+			item.rare = ItemRarityID.Green; // the color that the item's name will be in-game
+			item.UseSound = SoundID.Item11; // The sound that this item plays when used.
+			item.autoReuse = true; // if you can hold click to automatically use it again
 			item.shoot = 10; //idk why but all the guns in the vanilla source have this
-			item.shootSpeed = 16f;
-			item.useAmmo = AmmoID.Bullet;
+			item.shootSpeed = 16f; // the speed of the projectile (measured in pixels per frame)
+			item.useAmmo = AmmoID.Bullet; // The "ammo Id" of the ammo item that this weapon uses. Note that this is not an item Id, but just a magic value.
 		}
 
 		public override void AddRecipes() {
 			ModRecipe recipe = new ModRecipe(mod);
-			recipe.AddIngredient(ItemType<ExampleItem>(), 10);
-			recipe.AddTile(TileType<ExampleWorkbench>());
+			recipe.AddIngredient(ModContent.ItemType<ExampleItem>(), 10);
+			recipe.AddTile(ModContent.TileType<ExampleWorkbench>());
 			recipe.SetResult(this);
 			recipe.AddRecipe();
 		}
@@ -49,7 +48,7 @@ namespace ExampleMod.Items.Weapons
 		}*/
 
 		// What if I wanted it to work like Uzi, replacing regular bullets with High Velocity Bullets?
-		// Uzi/Molten Fury style: Replace normal Bullets with Highvelocity
+		// Uzi/Molten Fury style: Replace normal Bullets with High Velocity
 		/*public override bool Shoot(Player player, ref Vector2 position, ref float speedX, ref float speedY, ref int type, ref int damage, ref float knockBack)
 		{
 			if (type == ProjectileID.Bullet) // or ProjectileID.WoodenArrowFriendly
@@ -126,7 +125,7 @@ namespace ExampleMod.Items.Weapons
 			item.reuseDelay = 14;
 		public override bool ConsumeAmmo(Player player)
 		{
-			// Because of how the game works, player.itemAnimation will be 11, 7, and finally 3. (UseAmination - 1, then - useTime until less than 0.) 
+			// Because of how the game works, player.itemAnimation will be 11, 7, and finally 3. (useAnimation - 1, then - useTime until less than 0.) 
 			// We can get the Clockwork Assault Riffle Effect by not consuming ammo when itemAnimation is lower than the first shot.
 			return !(player.itemAnimation < item.useAnimation - 2);
 		}*/

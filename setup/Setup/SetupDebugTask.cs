@@ -17,8 +17,6 @@ namespace Terraria.ModLoader.Setup
 			taskInterface.SetStatus("Updating ModCompile version");
 			var modCompile = Path.Combine(tMLSteamDir, "ModCompile");
 			UpdateModCompileVersion(modCompile);
-
-			taskInterface.SetStatus("Compiling RoslynWrapper");
 			bool msBuildOnPath = RunCmd("RoslynWrapper", "where",
 				"msbuild",
 				(s) => Console.WriteLine(s), null, null, taskInterface.CancellationToken
@@ -34,6 +32,7 @@ namespace Terraria.ModLoader.Setup
 			var roslynRefs = new[] {"RoslynWrapper.dll", "Microsoft.CodeAnalysis.dll", "Microsoft.CodeAnalysis.CSharp.dll",
 				"System.Collections.Immutable.dll", "System.Reflection.Metadata.dll", "System.IO.FileSystem.dll", "System.IO.FileSystem.Primitives.dll",
 				"System.Security.Cryptography.Algorithms.dll", "System.Security.Cryptography.Encoding.dll", "System.Security.Cryptography.Primitives.dll", "System.Security.Cryptography.X509Certificates.dll" };
+
 			foreach (var dll in roslynRefs)
 				Copy(Path.Combine("RoslynWrapper/bin/Release/net46", dll), Path.Combine(modCompile, dll));
 
