@@ -24,6 +24,7 @@ public class ExtraJumpTest : ModPlayer
 		player.hasJumpOption_Santank = true;
 		player.hasJumpOption_WallOfFleshGoat = true;
 		player.hasJumpOption_Basilisk = true;
+		player.hasDeadCellsDownDash = true;
 
 		// Cannot port assignment to isPerformingJump_X
 		player.isPerformingJump_Cloud = true;
@@ -35,6 +36,7 @@ public class ExtraJumpTest : ModPlayer
 		player.isPerformingJump_Santank = true;
 		player.isPerformingJump_WallOfFleshGoat = true;
 		player.isPerformingJump_Basilisk = true;
+		player.isPerformingJump_DownDash = true;
 
 		// Cannot port conditional setter, emit a suggestion
 		player.canJumpAgain_Cloud = 1 > 2;

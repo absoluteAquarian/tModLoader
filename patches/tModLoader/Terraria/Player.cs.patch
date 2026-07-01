@@ -115,6 +115,17 @@
  	public int numberOfDeathsPVE;
  	public int numberOfDeathsPVP;
  	public static int crystalLeafDamage = 100;
+@@ -706,7 +_,10 @@
+ 	public bool treasureMagnet;
+ 	public bool chiselSpeed;
+ 	public bool lifeForce;
++	// Patch context: moved to be after the hasJumpOption_X properties
++	/*
+ 	public bool hasDeadCellsDownDash;
++	*/
+ 	public bool calmed;
+ 	public bool inferno;
+ 	public float flameRingRot;
 @@ -731,6 +_,7 @@
  	public int afkCounterForKiting;
  	public static int AFKTimeNeededForAutoKiting = 3600;
@@ -468,7 +479,7 @@
  	public readonly Chest bank4 = Chest.CreateBank(-5);
  	public BitsByte voidVaultInfo;
  	public float headRotation;
-@@ -1006,31 +_,59 @@
+@@ -1006,31 +_,63 @@
  	public Vector2 fullRotationOrigin = Vector2.Zero;
  	public int fartKartCloudDelay;
  	public const int fartKartCloudDelayMax = 20;
@@ -507,6 +518,10 @@
  	public byte wetSlime;
  	public HitTile hitTile;
  	public HitTile hitReplace;
++	/// <summary>
++	/// The timer associated with the player's grounded and mid-air extra jumps.<br/>
++	/// If zero, the player is able to start another jump; otherwise, the player's upward velocity is locked to <see cref="jumpSpeed"/> and (if an extra jump is in progress) <see cref="ExtraJump.ShowVisuals"/> is called.
++	/// </summary>
  	public int jump;
 +	/// <summary>
 +	/// The visible head equipment slot (<see cref="ArmorIDs.Head"/>). Usually corresponds to the <see cref="Item.headSlot"/> of the visible head ("helmet") armor or vanity item.
@@ -1025,12 +1040,13 @@
  	public int lastCreatureHit = -1;
  	public bool accThirdEye;
  	public byte accThirdEyeCounter;
-@@ -1510,7 +_,21 @@
+@@ -1510,15 +_,34 @@
  	public Item boneGloveItem;
  	public bool goldRing;
  	public bool accDivingHelm;
--	public bool accFlipper;
-+	//public bool accFlipper;
++	/*
+ 	public bool accFlipper;
++	*/
 +	public bool accFlipper {
 +		get {
 +			return GetJumpState<FlipperJump>().Enabled;
@@ -1048,15 +1064,18 @@
  	public bool deadCellsPotionStation;
  	public bool hasLuck_LuckyCoin;
  	public bool hasLuck_LuckyHorseshoe;
-@@ -1519,6 +_,7 @@
+ 	public bool hasLuck_LuckyClover;
+ 	public bool hasLuck_WiltedClover;
  	public bool hasLuck_RavenFeather;
++	/*
  	public bool isPerformingJump_DownDash;
++	*/
  	public int downDashTime;
 +	/*
  	public bool hasJumpOption_Cloud;
  	public bool canJumpAgain_Cloud;
  	public bool isPerformingJump_Cloud;
-@@ -1546,16 +_,42 @@
+@@ -1546,16 +_,43 @@
  	public bool hasJumpOption_Basilisk;
  	public bool canJumpAgain_Basilisk;
  	public bool isPerformingJump_Basilisk;
@@ -1070,6 +1089,7 @@
 +	internal bool hasJumpOption_Santank { set { if (value) GetJumpState<SantankMountJump>().Enable(); else throw new ArgumentException("Forgot to comment out a hasJumpOption_X = false statement"); } }
 +	internal bool hasJumpOption_WallOfFleshGoat { set { if (value) GetJumpState<GoatMountJump>().Enable(); else throw new ArgumentException("Forgot to comment out a hasJumpOption_X = false statement"); } }
 +	internal bool hasJumpOption_Basilisk { set { if (value) GetJumpState<BasiliskMountJump>().Enable(); else throw new ArgumentException("Forgot to comment out a hasJumpOption_X = false statement"); } }
++	internal bool hasDeadCellsDownDash { set { if (value) GetJumpState<DeadCellsDownDashJump>().Enable(); else throw new ArgumentException("Forgot to comment out a hasDeadCellsDownDash = false statement"); } }
 +
  	public bool isPerformingPogostickTricks;
  	public bool autoJump;
@@ -1387,7 +1407,7 @@
  	public bool UsingSuperCart {
  		get {
  			if (!unlockedSuperCart)
-@@ -2356,11 +_,13 @@
+@@ -2356,12 +_,84 @@
  		}
  	}
  
@@ -1399,8 +1419,87 @@
  	public float specialistEffectiveDamage => rangedDamage * rocketDamage;
 +	*/
  
++	/// <summary>
++	/// Whether flying with boots is allowed.<br/>
++	/// To disable boot flight, use <see cref="DisableBootFlying"/>
++	/// </summary>
++	public bool CanUseBootFlyingAbilities => _bootFlightEnabled;
++
++	/// <summary>
++	/// Disables the flying ability from boots for the rest of the current tick.<br/>
++	/// Calling this method will <b>not</b> consume any remaining flight time.<br/>
++	/// To read this state, use <see cref="CanUseBootFlyingAbilities"/>
++	/// </summary>
++	public void DisableBootFlying() => _bootFlightEnabled = false;
++
++	private bool _bootFlightEnabled;
++
++	/// <summary>
++	/// Whether flying with wings is allowed.<br/>
++	/// To disable wing flight, use <see cref="DisableWingFlying"/>
++	/// </summary>
++	public bool CanUseWingAbilities => _wingFlightEnabled;
++
++	/// <summary>
++	/// Disables the flying ability of wings for the rest of the current tick.<br/>
++	/// Calling this method will <b>not</b> consume any remaining flight time.<br/>
++	/// To read this state, use <see cref="CanUseWingAbilities"/>
++	/// </summary>
++	public void DisableWingFlying() => _wingFlightEnabled = false;
++
++	private bool _wingFlightEnabled;
++
++	/// <summary>
++	/// Whether hovering with <see cref="ItemID.FlyingCarpet"/> is allowed.<br/>
++	/// To disable that ability, use <see cref="DisableCarpetHovering"/>
++	/// </summary>
++	public bool CanUseCarpetHoveringAbilities => _carpetHoveringEnabled;
++
++	/// <summary>
++	/// Disables the hovering ability from <see cref="ItemID.FlyingCarpet"/> is allowed.<br/>
++	/// Calling this method will <b>not</b> consume any remaining hover time.<br/>
++	/// To read this state, Use <see cref="CanUseCarpetHoveringAbilities"/>
++	/// </summary>
++	public void DisableCarpetHovering() => _carpetHoveringEnabled = false;
++
++	private bool _carpetHoveringEnabled;
++
++	/// <summary>
++	/// Disables the flying abiliy from boots and wings and the hovering ability from <see cref="ItemID.FlyingCarpet"/> for the rest of the current tick.<br/>
++	/// To read those states, use <see cref="CanUseBootFlyingAbilities"/>, <see cref="CanUseWingAbilities"/> and <see cref="CanUseCarpetHoveringAbilities"/><br/>
++	/// If you instead want to consume the player's flying abilities, but not prevent actions like the slow fall from wings, use <see cref="ConsumeFlyingAbilities"/>
++	/// </summary>
++	public void DisableFlyingAbilities()
++	{
++		DisableBootFlying();
++		DisableWingFlying();
++		DisableCarpetHovering();
++	}
++
++	private void ResetFlyingAbilityFlags()
++	{
++		_bootFlightEnabled = true;
++		_wingFlightEnabled = true;
++		_carpetHoveringEnabled = true;
++	}
++
++	// NOTE: Seems to only be used by the new 1.4.5 developer wings, but was included anyway to keep it consistent with the above methods
++	internal bool CanFlapWings => _wingFlightEnabled;
++
++	internal bool CanPerformWingHovering => TryingToHoverDown && controlJump && wingTime > 0f && CanUseWingAbilities;
++
++	/*
  	public bool CanUseBootFlyingAbilities => !isPerformingJump_DownDash;
  
+ 	public bool CanUseWingAbilities {
+@@ -2372,6 +_,7 @@
+ 			return false;
+ 		}
+ 	}
++	*/
+ 
+ 	public bool ShouldNotDraw {
+ 		get {
 @@ -2386,8 +_,16 @@
  		}
  	}
@@ -3433,7 +3532,7 @@
  		fullHair = (hatHair = (hideHair = (drawsBackHairWithoutHeadgear = false)));
  		switch (head) {
  			case 0:
-@@ -13409,6 +_,7 @@
+@@ -13409,12 +_,16 @@
  		backHairDraw = num > 50 && (num < 56 || num > 63) && (num < 74 || num > 77) && (num < 88 || num > 89) && num != 94 && num != 100 && num != 104 && num != 112 && num < 116;
  		if (num == 133 || num == 134 || num == 146 || num == 162 || num == 6)
  			backHairDraw = true;
@@ -3441,6 +3540,15 @@
  	}
  
  	public void UpdateDead()
+ 	{
+ 		deadTime++;
++		/*
+ 		isPerformingJump_DownDash = false;
++		*/
++		ExtraJumpLoader.StopActiveJump(this);
+ 		shimmerUnstuckHelper.Clear();
+ 		timeShimmering = 0;
+ 		forcedGravity = 0;
 @@ -13426,6 +_,8 @@
  		ResetFloorFlags();
  		wings = 0;
@@ -3681,6 +3789,16 @@
  		coolWhipBuff = false;
  		cobWhipBuff = false;
  		yoraiz0rEye = 0;
+@@ -14684,7 +_,9 @@
+ 		sunflower = false;
+ 		wellFed = false;
+ 		inferno = false;
++		/*
+ 		hasDeadCellsDownDash = false;
++		*/
+ 		manaMagnet = false;
+ 		lifeMagnet = false;
+ 		treasureMagnet = false;
 @@ -14693,7 +_,9 @@
  		dangerSense = false;
  		endurance = 0f;
@@ -3719,12 +3837,13 @@
  		wingTimeMax = 0;
  		brokenArmor = false;
  		silence = false;
-@@ -14940,6 +_,9 @@
+@@ -14940,6 +_,10 @@
  		hasLuck_LuckyClover = false;
  		hasLuck_RavenFeather = false;
  		hasLuck_WiltedClover = false;
 +		blockExtraJumps = false;
 +		ExtraJumpLoader.ResetEnableFlags(this);
++		ResetFlyingAbilityFlags();
 +		/*
  		hasJumpOption_Cloud = false;
  		hasJumpOption_Sail = false;
@@ -3896,10 +4015,20 @@
  			for (int i = 0; i < num2; i++) {
  				WorldGen.KillTile_MakeTileDust(point.X, point.Y, tile);
  			}
-@@ -16195,7 +_,7 @@
+@@ -16195,7 +_,17 @@
  		}
  	}
  
++	public bool StompNPCs(int damage, float knockback, int npcImmuneTime, int playerImmuneTime, DamageClass? damageType = null)
++	{
++		Rectangle area = getRect();
++		area.Offset(0, height - 1);
++		area.Height = 2;
++		area.Inflate(12, 6);
++
++		return CollideWithNPCs(area, GetTotalDamage(damageType ?? DamageClass.Default).ApplyTo(damage), knockback, npcImmuneTime, playerImmuneTime, damageType) > 0;
++	}
++
 -	public int CollideWithNPCs(Rectangle myRect, float Damage, float Knockback, int NPCImmuneTime, int PlayerImmuneTime)
 +	public int CollideWithNPCs(Rectangle myRect, float Damage, float Knockback, int NPCImmuneTime, int PlayerImmuneTime, DamageClass? damageType = null)
  	{
@@ -3987,15 +4116,36 @@
  
  		int num = BannerSystem.NPCtoBanner(npc.BannerID());
  		if (num >= 0)
-@@ -16315,7 +_,7 @@
+@@ -16301,9 +_,29 @@
+ 		return true;
+ 	}
  
- 				Rectangle rect2 = nPC.getRect();
- 				if (rect.Intersects(rect2) && (nPC.noTileCollide || Collision.CanHit(position, width, height, nPC.position, nPC.width, nPC.height))) {
--					float num = 40f * minionDamage;
-+					float num = GetTotalDamage(DamageClass.Summon).ApplyTo(40f);
- 					float knockback = 5f;
- 					int num2 = direction;
- 					if (velocity.X < 0f)
++	// Used by Terraria.ModLoader.FlipperJump to mimic normal jumps
++	internal void PerformNormalJump()
++	{
++		if (mount.Active && mount.Type == 43)
++			SoundEngine.PlaySound(SoundID.Item168, base.Center);
++
++		velocity.Y = (0f - jumpSpeed) * gravDir;
++		jump = jumpHeight;
++		if (portableStoolInfo.IsInUse) {
++			portableStoolInfo.IsInUse = false;
++			position.Y -= portableStoolInfo.HeightBoost;
++			if (Main.myPlayer == whoAmI)
++				Main.cameraY += portableStoolInfo.HeightBoost;
++		}
++
++		if (sliding)
++			velocity.X = 3 * -slideDir;
++	}
++
+ 	public void JumpMovement()
+ 	{
+ 		if (mount.Active && mount.IsConsideredASlimeMount && wetSlime == 0 && velocity.Y > 0f) {
++			/*
+ 			Rectangle rect = getRect();
+ 			rect.Offset(0, height - 1);
+ 			rect.Height = 2;
 @@ -16325,7 +_,7 @@
  						num2 = 1;
  
@@ -4005,15 +4155,44 @@
  
  					nPC.immune[whoAmI] = 10;
  					velocity.Y = -10f;
-@@ -16347,7 +_,7 @@
+@@ -16333,8 +_,13 @@
+ 					break;
+ 				}
+ 			}
++			*/
++
++			if (StompNPCs(40, 5f, 10, 6, DamageClass.Summon))
++				velocity.Y = -10f;
+ 		}
  
- 				Rectangle rect4 = nPC2.getRect();
- 				if (rect3.Intersects(rect4) && (nPC2.noTileCollide || Collision.CanHit(position, width, height, nPC2.position, nPC2.width, nPC2.height))) {
--					float num3 = 40f * minionDamage;
-+					float num3 = GetTotalDamage(DamageClass.Summon).ApplyTo(40f);
- 					float knockback2 = 5f;
- 					int num4 = direction;
- 					if (velocity.X < 0f)
++		/*
+ 		if (isPerformingJump_DownDash && velocity.Y > 0f) {
+ 			Rectangle rect3 = getRect();
+ 			rect3.Offset(0, height - 1);
+@@ -16365,8 +_,13 @@
+ 				}
+ 			}
+ 		}
++		*/
++
++		if (GetJumpState<DeadCellsDownDashJump>().Active && velocity.Y > 0f)
++			StompNPCs(40, 5f, 10, 6, DamageClass.Summon);
+ 
+ 		if (mount.Active && mount.Type == 17 && velocity.Y > 0f) {
++			/*
+ 			Rectangle rect5 = getRect();
+ 			rect5.Offset(0, height - 1);
+ 			rect5.Height = 2;
+@@ -16395,6 +_,9 @@
+ 					break;
+ 				}
+ 			}
++			*/
++
++			StompNPCs(40, 5f, 12, 12);
+ 		}
+ 
+ 		if (controlJump) {
 @@ -16402,8 +_,10 @@
  				autoJump = false;
  
@@ -4030,7 +4209,7 @@
  				}
  			}
 -			else if ((sliding || velocity.Y == 0f || flag || canJumpAgain_Cloud || canJumpAgain_Sandstorm || canJumpAgain_Blizzard || canJumpAgain_Fart || canJumpAgain_Sail || canJumpAgain_Unicorn || canJumpAgain_Santank || canJumpAgain_WallOfFleshGoat || canJumpAgain_Basilisk || (flag2 && flag3) || (hasDeadCellsDownDash && controlDown && velocity.Y != 0f && !isPerformingJump_DownDash && !mount.Active)) && (releaseJump || (autoJump && (velocity.Y == 0f || sliding)))) {
-+			else if ((sliding || velocity.Y == 0f || flag || AnyExtraJumpUsable() || (hasDeadCellsDownDash && controlDown && velocity.Y != 0f && !isPerformingJump_DownDash && !mount.Active)) && (releaseJump || (autoJump && (velocity.Y == 0f || sliding)))) {
++			else if ((sliding || velocity.Y == 0f || flag || AnyExtraJumpUsable()) && (releaseJump || (autoJump && (velocity.Y == 0f || sliding)))) {
  				if (mount.Active && MountID.Sets.Cart[mount.Type])
  					position.Y -= 0.001f;
  
@@ -4042,17 +4221,6 @@
  				if (wet && accFlipper) {
  					if (swimTime == 0)
  						swimTime = 30;
-@@ -16450,7 +_,9 @@
- 				bool flag10 = false;
- 				bool flag11 = false;
- 				bool flag12 = false;
--				bool flag13 = false;
-+				*/
-+				bool flag13 = false; // TODO: isPerformingJump_DownDash needs integration.
-+				/*
- 				if (!flag2 && !flag) {
- 					if (canJumpAgain_Basilisk) {
- 						flag12 = true;
 @@ -16491,6 +_,10 @@
  						canJumpAgain_Cloud = false;
  					}
@@ -4064,17 +4232,33 @@
  
  				canRocket = false;
  				rocketRelease = false;
-@@ -16520,6 +_,10 @@
- 				else if (flag13) {
- 					velocity.Y = 16f * gravDir;
+@@ -16500,8 +_,12 @@
+ 				if (velocity.Y == 0f || sliding || (autoJump && justJumped))
+ 					RefreshDoubleJumps();
+ 
++				// NOTE: Terraria.ModLoader.Default.ExtraJumpsPlayer handles the jump
++				/*
+ 				isPerformingJump_DownDash = flag13;
++				*/
+ 				if (velocity.Y == 0f || flag4 || sliding || flag) {
++					/*
+ 					if (mount.Active && mount.Type == 43)
+ 						SoundEngine.PlaySound(SoundID.Item168, base.Center);
+ 
+@@ -16516,7 +_,13 @@
+ 
+ 					if (sliding)
+ 						velocity.X = 3 * -slideDir;
++					*/
++					PerformNormalJump();
  				}
 +				else if (attemptDoubleJumps && !blockExtraJumps) {
 +					ExtraJumpLoader.ProcessJumps(this);
 +				}
 +				/*
- 				else if (flag5) {
- 					isPerformingJump_Sandstorm = true;
- 					_ = height;
+ 				else if (flag13) {
+ 					velocity.Y = 16f * gravDir;
+ 				}
 @@ -16730,6 +_,7 @@
  					Main.gore[num28].velocity.X = Main.gore[num28].velocity.X * 0.1f - velocity.X * 0.1f;
  					Main.gore[num28].velocity.Y = Main.gore[num28].velocity.Y * 0.1f - velocity.Y * 0.05f;
@@ -4178,12 +4362,13 @@
  	private void DoCommonDashHandle(out int dir, out bool dashing, DashStartAction dashStartAction = null)
  	{
  		dir = 0;
-@@ -17422,7 +_,7 @@
+@@ -17422,7 +_,8 @@
  	public void CarpetMovement()
  	{
  		bool flag = false;
 -		if (grappling[0] == -1 && carpet && !canJumpAgain_Cloud && !canJumpAgain_Sandstorm && !canJumpAgain_Blizzard && !canJumpAgain_Fart && !canJumpAgain_Sail && !canJumpAgain_Unicorn && !canJumpAgain_Santank && !canJumpAgain_WallOfFleshGoat && !canJumpAgain_Basilisk && jump == 0 && velocity.Y != 0f && rocketTime == 0 && wingTime == 0f && !mount.Active) {
-+		if (grappling[0] == -1 && carpet && !AnyExtraJumpUsable() && jump == 0 && velocity.Y != 0f && rocketTime == 0 && wingTime == 0f && !mount.Active) {
++		// NOTE: The dash ability from the Ram Rune does not override carpet flight, hence the need for this overload of AnyExtraJumpUsable()
++		if (grappling[0] == -1 && carpet && jump == 0 && velocity.Y != 0f && rocketTime == 0 && wingTime == 0f && !mount.Active && CanUseCarpetHoveringAbilities && !AnyExtraJumpUsable(checkingCarpetFlight: true)) {
  			if (controlJump && canCarpet) {
  				canCarpet = false;
  				carpetTime = 300;
@@ -4256,7 +4441,7 @@
  		}
  
  		if (num3 == 0) {
-@@ -18223,13 +_,14 @@
+@@ -18223,6 +_,7 @@
  		if (Main.projectile[grappling[0]].type >= 646 && Main.projectile[grappling[0]].type <= 649)
  			num9 = 16f;
  
@@ -4264,23 +4449,55 @@
  		float num10 = num8;
  		num10 = ((!(num8 > num9)) ? 1f : (num9 / num8));
  		preferedPlayerVelocityX *= num10;
- 		preferedPlayerVelocityY *= num10;
- 	}
+@@ -18231,16 +_,47 @@
  
--	private void RefreshMovementAbilities(bool doubleJumps = true)
-+	public void RefreshMovementAbilities(bool doubleJumps = true)
+ 	private void RefreshMovementAbilities(bool doubleJumps = true)
  	{
++		/*
  		wingTime = wingTimeMax;
  		rocketTime = rocketTimeMax;
-@@ -18241,6 +_,7 @@
+ 		rocketDelay = 0;
+ 		if (doubleJumps)
+ 			RefreshDoubleJumps();
++		*/
++		if (doubleJumps)
++			RefreshAirMovementAbilities();
++		else
++			RefreshFlyingAbilities();
++	}
++
++	/// <summary>
++	/// Resets the timers for the flying abilities from boots and wings, the hovering ability from <see cref="ItemID.FlyingCarpet"/> and sets <see cref="ExtraJumpState.Available"/> for all enabled extra jumps to <see langword="true"/>, allowing all of them to be used again.
++	/// <para/>
++	/// To only refresh flying abilities, use <see cref="RefreshFlyingAbilities"/><br/>
++	/// To only refresh extra jumps, use <see cref="RefreshExtraJumps"/>
++	/// </summary>
++	public void RefreshAirMovementAbilities()
++	{
++		RefreshFlyingAbilities();
++		RefreshExtraJumps();
++	}
++
++	/// <summary>
++	/// Resets the timers for the flying abilities from boots and wings and the hovering ability from <see cref="ItemID.FlyingCarpet"/>, allowing them to be used again.
++	/// </summary>
++	public void RefreshFlyingAbilities()
++	{
++		canCarpet = true;
++		wingTime = wingTimeMax;
++		rocketTime = rocketTimeMax;
++		rocketDelay = 0;
+ 	}
+ 
  	private void RefreshDoubleJumps()
  	{
- 		isPerformingJump_DownDash = false;
 +		/*
+ 		isPerformingJump_DownDash = false;
++		
  		if (hasJumpOption_Cloud)
  			canJumpAgain_Cloud = true;
  
-@@ -18267,6 +_,28 @@
+@@ -18267,6 +_,56 @@
  
  		if (hasJumpOption_Basilisk)
  			canJumpAgain_Basilisk = true;
@@ -4289,7 +4506,7 @@
 +	}
 +
 +	/// <summary>
-+	/// For each extra jump that is <see cref="ExtraJumpState.Enabled"/>, its <see cref="ExtraJumpState.Available"/> property set to <see langword="true"/>, allowing the extra jump to be used again.<br/>
++	/// Sets <see cref="ExtraJumpState.Available"/> for all enabled extra jumps to <see langword="true"/>, allowing the extra jump to be used again.<br/>
 +	/// Vanilla calls this method when the player is grounded and when jumping off of a grappling hook.
 +	/// </summary>
 +	public void RefreshExtraJumps()
@@ -4298,9 +4515,37 @@
 +	}
 +
 +	/// <summary>
-+	/// Sets the <see cref="ExtraJumpState.Available"/> flag for all extra jumps to <see langword="false"/>.<br/>
++	/// Clears the timers for the flying abilites from boots and wings, the hovering ability from <see cref="ItemID.FlyingCarpet"/> and sets <see cref="ExtraJumpState.Available"/> for all extra jumps to <see langword="false"/>.<br/>
++	/// To only consume flying abilities, use <see cref="ConsumeFlyingAbilities"/><br/>
++	/// To only consume extra jumps, use <see cref="ConsumeAllExtraJumps"/>
++	/// </summary>
++	public void ConsumeAirMovementAbilities()
++	{
++		ConsumeFlyingAbilities();
++		ConsumeAllExtraJumps();
++	}
++
++	/// <summary>
++	/// Clears the timers for the flying abilites from boots and wings and the hovering ability from <see cref="ItemID.FlyingCarpet"/>.<br/>
++	/// To disable the flying ability of boots, use <see cref="DisableBootFlying"/><br/>
++	/// To disable the flying ability of wings, use <see cref="DisableWingFlying"/><br/>
++	/// To disable the hovering ability of <see cref="ItemID.FlyingCarpet"/>, use <see cref="DisableCarpetHovering"/><br/>
++	/// To disable all of them, use <see cref="DisableFlyingAbilities"/>
++	/// </summary>
++	public void ConsumeFlyingAbilities()
++	{
++		canCarpet = false;
++		carpetTime = 0;
++		wingTime = 0;
++		rocketTime = 0;
++		rocketDelay = 0;
++	}
++
++	/// <summary>
++	/// Sets <see cref="ExtraJumpState.Available"/> for all extra jumps to <see langword="false"/>.<br/>
 +	/// If you want to disable an extra jump, use <see cref="ExtraJumpState.Disable"/> instead.<br/>
-+	/// If you want to disable <b>all</b> extra jumps, but not prevent them once the disabling factor is removed, use <see cref="blockExtraJumps"/> instead.
++	/// If you want to disable <b>all</b> extra jumps, but not prevent them once the disabling factor is removed, use <see cref="blockExtraJumps"/> instead.<br/>
++	/// If you want to stop the currently active extra jump, use <see cref="StopExtraJumpInProgress"/> instead.
 +	/// </summary>
 +	public void ConsumeAllExtraJumps()
 +	{
@@ -4389,6 +4634,15 @@
  		if (i == Main.myPlayer && Main.netMode != 2)
  			LockOnHelper.Update();
  
+@@ -19481,7 +_,7 @@
+ 		if (PortalPhysicsEnabled)
+ 			maxFallSpeed = 35f;
+ 
+-		if (!shimmering && wet && isPerformingJump_DownDash) {
++		if (!shimmering && wet && GetJumpState<DeadCellsDownDashJump>().Active) {
+ 			gravity *= 0.85f;
+ 			maxFallSpeed *= 0.85f;
+ 		}
 @@ -19578,6 +_,7 @@
  		if (whoAmI != Main.myPlayer) {
  			int num2 = (int)(position.X + (float)(width / 2)) / 16;
@@ -4417,6 +4671,22 @@
  		infernoCounter++;
  		if (infernoCounter >= 180)
  			infernoCounter = 0;
+@@ -19634,10 +_,15 @@
+ 		if (timeSinceLastDashStarted >= 300)
+ 			timeSinceLastDashStarted = 300;
+ 
++		if (mount.Active)
++			ExtraJumpLoader.StopJump<DeadCellsDownDashJump>(this);
++		/*
+ 		if (isPerformingJump_DownDash && mount.Active)
+ 			isPerformingJump_DownDash = false;
+ 
+ 		if (isPerformingJump_DownDash)
++		*/
++		if (GetJumpState<DeadCellsDownDashJump>().Active)
+ 			downDashTime++;
+ 		else
+ 			downDashTime = 0;
 @@ -20003,6 +_,9 @@
  				}
  
@@ -4441,6 +4711,15 @@
  				}
  
  				if (itemAnimation == 0 && ItemTimeIsZero && reuseDelay == 0)
+@@ -20215,7 +_,7 @@
+ 				if (mount.Type == 1)
+ 					num10 = 0;
+ 
+-				if (isPerformingJump_DownDash) {
++				if (GetJumpState<DeadCellsDownDashJump>().Active) {
+ 					num10 = 0;
+ 					DoDeadCellsGroundPoundEffect();
+ 				}
 @@ -20231,7 +_,10 @@
  						Tile tile = Main.tile[num14, num13];
  						if (tile != null && tile.active()) {
@@ -4534,6 +4813,14 @@
  		if (whoAmI == Main.myPlayer) {
  			if (!onFire && !poisoned)
  				trapDebuffSource = false;
+@@ -20435,6 +_,7 @@
+ 			wings = 0;
+ 			merman = true;
+ 			accFlipper = true;
++			DisableWingFlying();
+ 			AddBuff(34, 2);
+ 		}
+ 		else {
 @@ -20482,8 +_,9 @@
  		if (Main.npcShop <= 0)
  			discountAvailable = discountEquipped;
@@ -4684,6 +4971,32 @@
  		}
  
  		if (!carpet) {
+@@ -21125,11 +_,15 @@
+ 			if (pulleyFrame > 1)
+ 				pulleyFrame = 0;
+ 
++			/*
+ 			canCarpet = true;
+ 			carpetFrame = -1;
+ 			wingTime = wingTimeMax;
+ 			rocketTime = rocketTimeMax;
+ 			rocketDelay = 0;
++			*/
++			RefreshFlyingAbilities();
++			carpetFrame = -1;
+ 			rocketFrame = false;
+ 			canRocket = false;
+ 			rocketRelease = false;
+@@ -21137,7 +_,8 @@
+ 			UpdateControlHolds();
+ 		}
+ 		else if (grappling[0] == -1 && !tongued) {
+-			if (wingsLogic > 0 && velocity.Y != 0f && !merman && mount.CanUseWings)
++			//if (wingsLogic > 0 && velocity.Y != 0f && !merman && mount.CanUseWings)
++			if (wingsLogic > 0 && velocity.Y != 0f && mount.CanUseWings && CanUseWingAbilities)
+ 				WingAirLogicTweaks();
+ 
+ 			if (empressBrooch)
 @@ -21201,6 +_,7 @@
  				}
  			}
@@ -4711,6 +5024,22 @@
  			HorizontalMovement();
  			bool flag18 = !mount.Active;
  			if (forcedGravity > 0) {
+@@ -21383,10 +_,14 @@
+ 			if (wingsLogic > 0 && controlJump && wingTime > 0f && jump == 0 && velocity.Y != 0f)
+ 				flag19 = true;
+ 
+-			if ((wingsLogic == 22 || wingsLogic == 28 || wingsLogic == 30 || wingsLogic == 32 || wingsLogic == 29 || wingsLogic == 33 || wingsLogic == 35 || wingsLogic == 37 || wingsLogic == 45) && controlJump && TryingToHoverDown && wingTime > 0f)
++			//if ((wingsLogic == 22 || wingsLogic == 28 || wingsLogic == 30 || wingsLogic == 32 || wingsLogic == 29 || wingsLogic == 33 || wingsLogic == 35 || wingsLogic == 37 || wingsLogic == 45) && controlJump && TryingToHoverDown && wingTime > 0f)
++			if ((wingsLogic == 22 || wingsLogic == 28 || wingsLogic == 30 || wingsLogic == 32 || wingsLogic == 29 || wingsLogic == 33 || wingsLogic == 35 || wingsLogic == 37 || wingsLogic == 45) && CanPerformWingHovering)
+ 				flag19 = true;
+ 
++			/*
+ 			bool flag20 = isPerformingJump_DownDash;
++			*/
++			bool flag20 = !CanUseWingAbilities;
+ 			if (flag20)
+ 				flag19 = false;
+ 
 @@ -21402,12 +_,13 @@
  				CancelAllJumpVisualEffects();
  			}
@@ -4734,17 +5063,6 @@
  				if (flag19 && wings != 4 && wings != 22 && wings != 0 && wings != 24 && wings != 28 && wings != 30 && wings != 33 && wings != 45) {
  					bool flag21 = wingFrame == 3;
  					if (wings == 43 || wings == 44)
-@@ -21446,7 +_,10 @@
- 				if (empressBrooch)
- 					rocketTime = rocketTimeMax;
- 
-+				/*
- 				if ((wingTime == 0f || wingsLogic == 0) && rocketBoots != 0 && controlJump && rocketDelay == 0 && canRocket && rocketRelease && CanUseBootFlyingAbilities) {
-+				*/
-+				if ((wingTime == 0f || wingsLogic == 0) && rocketBoots != 0 && controlJump && rocketDelay == 0 && canRocket && rocketRelease && !AnyExtraJumpUsable()) {
- 					if (rocketTime > 0) {
- 						rocketTime--;
- 						rocketDelay = 10;
 @@ -21664,6 +_,7 @@
  								Main.dust[num57].shader = GameShaders.Armor.GetSecondaryShader(cWings, this);
  							}
@@ -4753,6 +5071,16 @@
  							if (wings == 4) {
  								rocketDelay2--;
  								if (rocketDelay2 <= 0) {
+@@ -21868,7 +_,8 @@
+ 			wingFrame = 0;
+ 
+ 		bool canUseWingAbilities = CanUseWingAbilities;
+-		if ((wingsLogic == 22 || wingsLogic == 28 || wingsLogic == 30 || wingsLogic == 31 || wingsLogic == 33 || wingsLogic == 35 || wingsLogic == 37 || wingsLogic == 45) && TryingToHoverDown && controlJump && wingTime > 0f && canUseWingAbilities) {
++		//if ((wingsLogic == 22 || wingsLogic == 28 || wingsLogic == 30 || wingsLogic == 31 || wingsLogic == 33 || wingsLogic == 35 || wingsLogic == 37 || wingsLogic == 45) && TryingToHoverDown && controlJump && wingTime > 0f && canUseWingAbilities) {
++		if ((wingsLogic == 22 || wingsLogic == 28 || wingsLogic == 30 || wingsLogic == 31 || wingsLogic == 33 || wingsLogic == 35 || wingsLogic == 37 || wingsLogic == 45) && CanPerformWingHovering) {
+ 			float num69 = 0.9f;
+ 			if (wingsLogic == 45)
+ 				num69 = 0.8f;
 @@ -22003,12 +_,16 @@
  
  				for (int num77 = 0; num77 < Main.maxNPCs; num77++) {
@@ -4779,6 +5107,15 @@
  		float num109 = 0.5f;
  		float num110 = 0.5f;
  		float movementSpeed = 0.25f;
+@@ -22542,7 +_,7 @@
+ 				}
+ 			}
+ 
+-			if (isPerformingJump_DownDash && velocity.Y != 0f) {
++			if (GetJumpState<DeadCellsDownDashJump>().Active && velocity.Y != 0f) {
+ 				Vector2 vector9 = velocity;
+ 				velocity.X = 0f;
+ 				DryCollision(fallThrough, flag29);
 @@ -22610,6 +_,9 @@
  		if (statMana > statManaMax2)
  			statMana = statManaMax2;
@@ -4866,6 +5203,15 @@
  	}
  
  	private void UpdateBrokenMirrorLuck()
+@@ -23332,7 +_,7 @@
+ 	private void WingAirLogicTweaks()
+ 	{
+ 		WingStats wingStats = GetWingStats(wingsLogic);
+-		bool flag = TryingToHoverDown && controlJump && wingTime > 0f && !isPerformingJump_DownDash;
++		bool flag = CanPerformWingHovering;
+ 		if (wingStats.HasDownHoverStats && flag) {
+ 			if (wingStats.DownHoverSpeedOverride != -1f)
+ 				accRunSpeed = wingStats.DownHoverSpeedOverride;
 @@ -23348,6 +_,8 @@
  
  		if (wingsLogic == 45 && (float)timeSinceLastDashStarted >= 60f)
@@ -4885,6 +5231,33 @@
  	{
  		bool flag = wingsLogic != wings;
  		if (wings == 4) {
+@@ -23923,7 +_,7 @@
+ 			else if (velocity.Y != 0f) {
+ 				num22 = 6;
+ 				if (velocity.Y * gravDir > 0f) {
+-					flag3 = controlJump && !isPerformingJump_DownDash;
++					flag3 = controlJump && CanFlapWings;
+ 					if (flag3) {
+ 						num22 = 3;
+ 						if (wingFrame == 1)
+@@ -23978,7 +_,7 @@
+ 			else if (velocity.Y != 0f) {
+ 				num23 = 6;
+ 				if (velocity.Y * gravDir > 0f) {
+-					flag5 = controlJump && !isPerformingJump_DownDash;
++					flag5 = controlJump && CanFlapWings;
+ 					if (flag5) {
+ 						num23 = 3;
+ 						if (wingFrame == 1)
+@@ -24033,7 +_,7 @@
+ 			else if (velocity.Y != 0f) {
+ 				num24 = 5;
+ 				if (velocity.Y * gravDir > 0f) {
+-					flag7 = controlJump && !isPerformingJump_DownDash;
++					flag7 = controlJump && CanFlapWings;
+ 					if (flag7) {
+ 						num24 = 3;
+ 						if (wingFrame == 1)
 @@ -24319,6 +_,9 @@
  			return;
  		}
@@ -5461,20 +5834,40 @@
  		if (legs == 140) {
  			legFrameCounter = 0.0;
  			legFrame.Y = legFrame.Height * (velocity.Y != 0f).ToInt();
-@@ -29650,6 +_,8 @@
+@@ -29647,6 +_,7 @@
+ 
+ 	private void CancelAllJumpVisualEffects(bool includeDownDash = true)
+ 	{
++		/*
  		if (includeDownDash)
  			isPerformingJump_DownDash = false;
  
-+		ExtraJumpLoader.StopActiveJump(this, out _);
-+		/*
- 		isPerformingJump_Cloud = false;
- 		isPerformingJump_Sandstorm = false;
- 		isPerformingJump_Blizzard = false;
-@@ -29657,9 +_,10 @@
+@@ -29657,9 +_,31 @@
  		isPerformingJump_Sail = false;
  		isPerformingJump_Unicorn = false;
  		isPerformingJump_Santank = false;
 +		*/
++
++		// NOTE: "includeDownDash" is only ever false in an "if (jump == 0)" check, so we can assume that the parameter has to do with extra jumps running out of time
++		if (includeDownDash)
++			CancelExtraJumpVisuals();
++		else
++			ExtraJumpLoader.ClearExpiredJumps(this);
++	}
++
++	/// <summary>
++	/// Cancels the visuals of any extra jump in progress, but allows the jump movement to continue to completion.
++	/// <para/>
++	/// Used by vanilla when <see cref="jump"/> reaches zero or when performing an action which would cancel jumping, such as grappling, grabbing a rope or getting frozen.
++	/// <para/>
++	/// If you want to also stop the jump movement, use <see cref="StopExtraJumpInProgress"/> intead.<br/>
++	/// If you want to disable an extra jump, use <see cref="ExtraJumpState.Disable"/> instead.<br/>
++	/// If you want to disable <b>all</b> extra jumps, but not prevent them once the disabling factor is removed, use <see cref="blockExtraJumps"/> instead.<br/>
++	/// If you want to consume any remaining extra jumps but not stop any jumps in progress, use <see cref="ConsumeAllExtraJumps"/> instead.
++	/// </summary>
++	public void CancelExtraJumpVisuals()
++	{
++		ExtraJumpLoader.StopActiveJump(this);
  	}
  
 -	private void CancelAllBootRunVisualEffects()
@@ -5570,6 +5963,15 @@
  	}
  
  	public void SetArmorEffectVisuals(Player drawPlayer)
+@@ -29998,7 +_,7 @@
+ 			armorEffectDrawShadow = true;
+ 		}
+ 
+-		if (drawPlayer.isPerformingJump_DownDash)
++		if (drawPlayer.GetJumpState<DeadCellsDownDashJump>().Active)
+ 			armorEffectDrawShadow = true;
+ 
+ 		if (drawPlayer.body == 67 && drawPlayer.legs == 56 && drawPlayer.head >= 103 && drawPlayer.head <= 105)
 @@ -30078,6 +_,9 @@
  		if (drawPlayer.head == 267)
  			yoraiz0rDarkness = true;

@@ -25,6 +25,7 @@ public class ExtraJumpTest : ModPlayer
 		Player.GetJumpState(ExtraJump.SantankMount).Enabled = true/* tModPorter Suggestion: Call Enable() if setting this to true, otherwise call Disable(). */;
 		Player.GetJumpState(ExtraJump.GoatMount).Enabled = true/* tModPorter Suggestion: Call Enable() if setting this to true, otherwise call Disable(). */;
 		Player.GetJumpState(ExtraJump.BasiliskMount).Enabled = true/* tModPorter Suggestion: Call Enable() if setting this to true, otherwise call Disable(). */;
+		Player.GetJumpState(ExtraJump.DeadCellsDownDash).Enabled = true/* tModPorter Suggestion: Call Enable() if setting this to true, otherwise call Disable(). */;
 
 		// Cannot port assignment to isPerformingJump_X
 		Player.GetJumpState(ExtraJump.CloudInABottle).Active = true/* tModPorter Suggestion: Remove. Active cannot be assigned a value. */;
@@ -36,6 +37,7 @@ public class ExtraJumpTest : ModPlayer
 		Player.GetJumpState(ExtraJump.SantankMount).Active = true/* tModPorter Suggestion: Remove. Active cannot be assigned a value. */;
 		Player.GetJumpState(ExtraJump.GoatMount).Active = true/* tModPorter Suggestion: Remove. Active cannot be assigned a value. */;
 		Player.GetJumpState(ExtraJump.BasiliskMount).Active = true/* tModPorter Suggestion: Remove. Active cannot be assigned a value. */;
+		Player.GetJumpState(ExtraJump.DeadCellsDownDash).Active = true/* tModPorter Suggestion: Remove. Active cannot be assigned a value. */;
 
 		// Cannot port conditional setter, emit a suggestion
 		Player.GetJumpState(ExtraJump.CloudInABottle).Available/* tModPorter Suggestion: Player.GetJumpState(ExtraJump.CloudInABottle).Available = ... */ = 1 > 2;

@@ -359,22 +359,10 @@ public abstract class ModPlayer : ModType<Player, ModPlayer>, IIndexed
 	/// <summary>
 	/// Use this hook to modify the jump duration from an extra jump.
 	/// <para/> Called on local, server, and remote clients.
-	/// <para/> Vanilla's extra jumps use the following values:
-	/// <para>
-	/// Basilisk mount: 0.75<br/>
-	/// Blizzard in a Bottle: 1.5<br/>
-	/// Cloud in a Bottle: 0.75<br/>
-	/// Fart in a Jar: 2<br/>
-	/// Goat mount: 2<br/>
-	/// Sandstorm in a Bottle: 3<br/>
-	/// Santank mount: 2<br/>
-	/// Tsunami in a Bottle: 1.25<br/>
-	/// Unicorn mount: 2
-	/// </para>
 	/// </summary>
 	/// <param name="jump">The jump being performed</param>
-	/// <param name="duration">A modifier to the player's jump height, which when combined effectively acts as the duration for the extra jump</param>
-	public virtual void ModifyExtraJumpDurationMultiplier(ExtraJump jump, ref float duration)
+	/// <param name="duration">A modifier to the duration of the extra jump.</param>
+	public virtual void ModifyExtraJumpDurationMultiplier(ExtraJump jump, ref StatModifier duration)
 	{
 	}
 
@@ -411,7 +399,7 @@ public abstract class ModPlayer : ModType<Player, ModPlayer>, IIndexed
 	}
 
 	/// <summary>
-	/// This hook runs before the <see cref="ExtraJumpState.Available"/> flag for an extra jump is set to <see langword="true"/> in <see cref="Player.RefreshDoubleJumps"/>
+	/// This hook runs before the <see cref="ExtraJumpState.Available"/> flag for an extra jump is set to <see langword="true"/> in <see cref="Player.RefreshExtraJumps"/>
 	/// <para/> This occurs at the start of the grounded jump and while the player is grounded.
 	/// <para/> Called on local, server, and remote clients.
 	/// </summary>
@@ -431,7 +419,6 @@ public abstract class ModPlayer : ModType<Player, ModPlayer>, IIndexed
 
 	/// <summary>
 	/// Return <see langword="false"/> to prevent <see cref="ExtraJump.ShowVisuals(Player)"/> from executing on <paramref name="jump"/>.
-	/// <para/> By default, this hook returns whether the player is moving upwards with respect to <see cref="Player.gravDir"/>
 	/// <para/> Called on local, server, and remote clients.
 	/// </summary>
 	/// <param name="jump">The jump instance</param>
@@ -441,11 +428,11 @@ public abstract class ModPlayer : ModType<Player, ModPlayer>, IIndexed
 	}
 
 	/// <summary>
-	/// This hook runs before the <see cref="ExtraJumpState.Available"/> flag for an extra jump is set to <see langword="false"/>  in <see cref="Player.Update(int)"/> due to the jump being unavailable or when calling <see cref="Player.ConsumeAllExtraJumps"/> (vanilla calls it when a mount that blocks jumps is active)
+	/// Allows you to handle stomp abilities like the slime mounts and the <see cref="ItemID.DeadCellsRamRune"/> dash while the player is downward in normal gravity.
 	/// </summary>
-	/// <param name="jump">The jump instance</param>
-	public virtual void OnExtraJumpCleared(ExtraJump jump)
+	public virtual void HandleStompAbilities()
 	{
+
 	}
 
 	/// <summary>

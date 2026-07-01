@@ -210,6 +210,7 @@ public static partial class Config
 		RefactorInstanceMember("Terraria.Player",       "hasJumpOption_Santank",            ExtraJumpField("SantankMount",       "Enabled"));
 		RefactorInstanceMember("Terraria.Player",       "hasJumpOption_WallOfFleshGoat",    ExtraJumpField("GoatMount",          "Enabled"));
 		RefactorInstanceMember("Terraria.Player",       "hasJumpOption_Basilisk",           ExtraJumpField("BasiliskMount",      "Enabled"));
+		RefactorInstanceMember("Terraria.Player",       "hasDeadCellsDownDash",             ExtraJumpField("DeadCellsDownDash",  "Enabled"));
 		RefactorInstanceMember("Terraria.Player",       "canJumpAgain_Cloud",               ExtraJumpField("CloudInABottle",     "Available"));
 		RefactorInstanceMember("Terraria.Player",       "canJumpAgain_Sandstorm",           ExtraJumpField("SandstormInABottle", "Available"));
 		RefactorInstanceMember("Terraria.Player",       "canJumpAgain_Blizzard",            ExtraJumpField("BlizzardInABottle",  "Available"));
@@ -228,6 +229,7 @@ public static partial class Config
 		RefactorInstanceMember("Terraria.Player",       "isPerformingJump_Santank",         ExtraJumpField("SantankMount",       "Active"));
 		RefactorInstanceMember("Terraria.Player",       "isPerformingJump_WallOfFleshGoat", ExtraJumpField("GoatMount",          "Active"));
 		RefactorInstanceMember("Terraria.Player",       "isPerformingJump_Basilisk",        ExtraJumpField("BasiliskMount",      "Active"));
+		RefactorInstanceMember("Terraria.Player",       "isPerformingJump_DownDash",        ExtraJumpField("DeadCellsDownDash",  "Active"));
 
 		RenameMethod("Terraria.Item",		from: "IsNotTheSameAs",			to: "IsNotSameTypePrefixAndStack");
 		RenameMethod("Terraria.Item",		from: "DefaultToPlacableWall",	to: "DefaultToPlaceableWall");

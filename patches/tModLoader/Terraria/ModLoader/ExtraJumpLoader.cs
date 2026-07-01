@@ -18,6 +18,7 @@ public static class ExtraJumpLoader
 		ExtraJump.GoatMount,
 		ExtraJump.SantankMount,
 		ExtraJump.UnicornMount,
+		ExtraJump.DeadCellsDownDash,
 		ExtraJump.SandstormInABottle,
 		ExtraJump.BlizzardInABottle,
 		ExtraJump.FartInAJar,
@@ -122,6 +123,41 @@ public static class ExtraJumpLoader
 		}
 	}
 
+	internal static bool TryGetAvailableJump(Player player, bool checkingCarpetFlight, out ExtraJump availableJump)
+	{
+		foreach (ExtraJump jump in orderedJumps) {
+			if (checkingCarpetFlight && !jump.OverridesCarpetFlight)
+				continue;
+
+			if (player.GetJumpState(jump).Available && jump.CanStart(player) && PlayerLoader.CanStartExtraJump(jump, player)) {
+				availableJump = jump;
+				return true;
+			}
+		}
+
+		availableJump = null;
+		return false;
+	}
+
+	/// <summary>
+	/// Attempts to get the extra jump that is being performed by <paramref name="player"/>.
+	/// </summary>
+	/// <param name="player">The player instance</param>
+	/// <param name="activeJump">The active jump instance, if any.</param>
+	/// <returns><see langword="true"/> if an extra jump was being performed; otherwise, <see langword="false"/>.</returns>
+	public static bool TryGetActiveJump(Player player, out ExtraJump activeJump)
+	{
+		foreach (ExtraJump jump in orderedJumps) {
+			if (player.GetJumpState(jump).Active) {
+				activeJump = jump;
+				return true;
+			}
+		}
+
+		activeJump = null;
+		return false;
+	}
+
 	public static void UpdateHorizontalSpeeds(Player player)
 	{
 		foreach (ExtraJump moddedExtraJump in orderedJumps) {
@@ -144,13 +180,10 @@ public static class ExtraJumpLoader
 
 	public static void ProcessJumps(Player player)
 	{
-		foreach (ExtraJump jump in orderedJumps) {
-			ref ExtraJumpState state = ref player.GetJumpState(jump);
-			if (state.Available && jump.CanStart(player) && PlayerLoader.CanStartExtraJump(jump, player)) {
-				state.Start();
-				PerformJump(jump, player);
-				break;
-			}
+		if (TryGetAvailableJump(player, false, out ExtraJump jump))
+		{
+			player.GetJumpState(jump).Start();
+			PerformJump(jump, player);
 		}
 	}
 
@@ -166,18 +199,61 @@ public static class ExtraJumpLoader
 		}
 	}
 
-	internal static void StopActiveJump(Player player, out bool anyJumpCancelled)
+	/// <summary>
+	/// Stops the extra jump being performed by <paramref name="player"/>.
+	/// </summary>
+	/// <param name="player">The player instance</param>
+	/// <returns><see langword="true"/> if an extra jump was stopped; otherwise, <see langword="false"/>.</returns>
+	public static bool StopActiveJump(Player player)
 	{
-		anyJumpCancelled = false;
+		bool anyJumpCancelled = false;
 
 		foreach (ExtraJump jump in orderedJumps) {
-			ref ExtraJumpState state = ref player.GetJumpState(jump);
-			if (state.Active) {
-				StopJump(jump, player);
+			if (StopJump(jump, player))
 				anyJumpCancelled = true;
-			}
 		}
+
+		return anyJumpCancelled;
 	}
+
+	internal static bool ClearExpiredJumps(Player player)
+	{
+		bool anyJumpCancelled = false;
+
+		foreach (ExtraJump jump in orderedJumps) {
+			if (!jump.ClearedWhenTimerExpires)
+				continue;
+
+			if (StopJump(jump, player))
+				anyJumpCancelled = true;
+		}
+
+		return anyJumpCancelled;
+	}
+
+	/// <summary>
+	/// Attempts to stop <paramref name="jump"/> if it is being performed by <paramref name="player"/>.
+	/// </summary>
+	/// <param name="jump">The jump instance</param>
+	/// <param name="player">The player instance</param>
+	/// <returns><see langword="true"/> if <paramref name="player"/> was performing <paramref name="jump"/>; otherwise, <see langword="false"/>.</returns>
+	public static bool StopJump(ExtraJump jump, Player player) {
+		ref ExtraJumpState state = ref player.GetJumpState(jump);
+
+		if (state.Active) {
+			HandleEndOfJump(jump, player);
+			return true;
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// Attempts to stop the <typeparamref name="T"/> jump instance if it is being performed by <paramref name="player"/>.
+	/// </summary>
+	/// <param name="player">The player instance</param>
+	/// <returns><see langword="true"/> if <paramref name="player"/> was performing the <typeparamref name="T"/> jump instance; otherwise, <see langword="false"/>.</returns>
+	public static bool StopJump<T>(Player player) where T : ExtraJump => StopJump(ModContent.GetInstance<T>(), player);
 
 	internal static void ResetEnableFlags(Player player)
 	{
@@ -193,13 +269,17 @@ public static class ExtraJumpLoader
 
 			// Force the jump to stop early if unequipped or disabled
 			if (jumpEnded) {
-				StopJump(jump, player);
+				HandleEndOfJump(jump, player);
 				player.jump = 0;
 			}
 		}
 	}
 
-	internal static void ConsumeAllJumps(Player player)
+	/// <summary>
+	/// Sets <see cref="ExtraJumpState.Available"/> for all extra jumps on <paramref name="player"/> to <see langword="false"/>.
+	/// </summary>
+	/// <param name="player">The player instance</param>
+	public static void ConsumeAllJumps(Player player)
 	{
 		foreach (ExtraJump jump in ExtraJumps) {
 			player.GetJumpState(jump).Available = false;
@@ -208,11 +288,21 @@ public static class ExtraJumpLoader
 
 	private static void PerformJump(ExtraJump jump, Player player)
 	{
-		// Set velocity and jump duration
+		// Set the jump duration
 		float duration = jump.GetDurationMultiplier(player);
-		PlayerLoader.ModifyExtraJumpDurationMultiplier(jump, player, ref duration);
 
-		player.velocity.Y = -Player.jumpSpeed * player.gravDir;
+		if (duration > 0f) {
+			StatModifier modifier = StatModifier.Default;
+			PlayerLoader.ModifyExtraJumpDurationMultiplier(jump, player, ref modifier);
+			duration = modifier.ApplyTo(duration);
+		}
+
+		duration = Math.Max(duration, 0f);
+
+		// This was solely implemented for the Ram Rune dash, but would be useful for mods who want non-conventional jumps
+		if (jump.PreStart(player, duration))
+			player.velocity.Y = -Player.jumpSpeed * player.gravDir;
+
 		player.jump = (int)(Player.jumpHeight * duration);
 
 		bool playSound = true;
@@ -223,7 +313,7 @@ public static class ExtraJumpLoader
 			SoundEngine.PlaySound(16, (int)player.position.X, (int)player.position.Y);
 	}
 
-	private static void StopJump(ExtraJump jump, Player player)
+	private static void HandleEndOfJump(ExtraJump jump, Player player)
 	{
 		jump.OnEnded(player);
 		PlayerLoader.OnExtraJumpEnded(jump, player);

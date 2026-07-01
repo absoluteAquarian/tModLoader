@@ -603,32 +603,26 @@ public partial class Player : IEntityWithInstances<ModPlayer>
 	/// </summary>
 	public bool AnyExtraJumpUsable()
 	{
-		if (blockExtraJumps)
-			return false;
+		return AnyExtraJumpUsable(false);
+	}
 
-		foreach (ExtraJump jump in ExtraJumpLoader.OrderedJumps) {
-			if (GetJumpState(jump).Available && jump.CanStart(this) && PlayerLoader.CanStartExtraJump(jump, this))
-				return true;
-		}
-
-		return false;
+	internal bool AnyExtraJumpUsable(bool checkingCarpetFlight)
+	{
+		return !blockExtraJumps && ExtraJumpLoader.TryGetAvailableJump(this, checkingCarpetFlight, out _);
 	}
 
 	/// <summary>
-	/// Cancels any extra jump in progress.<br/>
-	/// Sets all <see cref="ExtraJumpState.Active"/> flags to <see langword="false"/> and calls OnExtraJumpEnded hooks.<br/>
-	/// Also sets <see cref="jump"/> to 0 if a an extra jump was active.<br/><br/>
-	///
-	/// Used by vanilla when performing an action which would cancel jumping, such as grappling, grabbing a rope or getting frozen.<br/><br/>
-	///
-	/// To prevent the use of remaining jumps, use <see cref="ConsumeAllExtraJumps"/> or <see cref="blockExtraJumps"/>.<br/>
-	/// To cancel a regular jump as well, do <c>Player.jump = 0;</c>
+	/// Cancels any extra jump in progress and allows the player to immediately start another extra jump.
+	/// <para/>
+	/// Used by vanilla when performing an action which would cancel jumping, such as grappling, grabbing a rope or getting frozen.
+	/// <para/>
+	/// If you want to disable an extra jump, use <see cref="ExtraJumpState.Disable"/> instead.<br/>
+	/// If you want to disable <b>all</b> extra jumps, but not prevent them once the disabling factor is removed, use <see cref="blockExtraJumps"/> instead.<br/>
+	/// If you want to consume any remaining extra jumps but not stop any jumps in progress, use <see cref="ConsumeAllExtraJumps"/> instead.
 	/// </summary>
 	public void StopExtraJumpInProgress()
 	{
-		ExtraJumpLoader.StopActiveJump(this, out bool anyJumpCancelled);
-
-		if (anyJumpCancelled)
+		if (ExtraJumpLoader.StopActiveJump(this))
 			jump = 0;
 	}
 

@@ -29,8 +29,7 @@ public sealed class FlipperJump : VanillaExtraJump
 		if (player.swimTime == 0)
 			player.swimTime = 30;
 
-		if (player.sliding)
-			player.velocity.X = 3 * -player.slideDir;
+		player.PerformNormalJump();
 
 		playSound = false;
 
@@ -189,6 +188,42 @@ public sealed class UnicornMountJump : VanillaExtraJump
 	{
 		player.runAcceleration *= 3f;
 		player.maxRunSpeed *= 1.5f;
+	}
+}
+
+public sealed class DeadCellsDownDashJump : VanillaExtraJump
+{
+	public override void SetStaticDefaults()
+	{
+		// The down dash can be interrupted by the Flying Carpet accessory
+		OverridesCarpetFlight = false;
+	}
+
+	public override float GetDurationMultiplier(Player player) => 0f;  // The jump only applies an initial burst of speed
+
+	public override bool CanStart(Player player)
+	{
+		return player.controlDown && !player.GetJumpState(this).Active && player.velocity.Y != 0f && !player.mount.Active;
+	}
+
+	public override bool PreStart(Player player, float duration)
+	{
+		player.velocity.Y = 16f * player.gravDir;
+		// Prevent the default assignment for "Player.velocity"
+		return false;
+	}
+
+	public override void OnRefreshed(Player player)
+	{
+		// Vanilla causes the ability to be cancelled when refreshing this jump
+		ExtraJumpLoader.StopJump(this, player);
+	}
+
+	public override bool CanShowVisuals(Player player) => true;
+
+	public override void ShowVisuals(Player player)
+	{
+		player.DisableFlyingAbilities();
 	}
 }
 

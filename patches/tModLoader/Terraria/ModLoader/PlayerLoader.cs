@@ -369,13 +369,18 @@ public static class PlayerLoader
 		}
 	}
 
-	private delegate void DelegateModifyExtraJumpDuration(ExtraJump jump, ref float duration);
+	private delegate void DelegateModifyExtraJumpDuration(ExtraJump jump, ref StatModifier duration);
 	private static HookList HookModifyExtraJumpDurationMultiplier = AddHook<DelegateModifyExtraJumpDuration>(p => p.ModifyExtraJumpDurationMultiplier);
 
-	public static void ModifyExtraJumpDurationMultiplier(ExtraJump jump, Player player, ref float duration)
+	public static void ModifyExtraJumpDurationMultiplier(ExtraJump jump, Player player, ref StatModifier duration)
 	{
 		foreach (var modPlayer in HookModifyExtraJumpDurationMultiplier.Enumerate(player)) {
-			try { modPlayer.ModifyExtraJumpDurationMultiplier(jump, ref duration); } catch { }
+			try {
+				StatModifier combiningDuration = StatModifier.Default;
+				modPlayer.ModifyExtraJumpDurationMultiplier(jump, ref combiningDuration);
+				duration = duration.CombineWith(combiningDuration);
+			} catch {
+			}
 		}
 	}
 

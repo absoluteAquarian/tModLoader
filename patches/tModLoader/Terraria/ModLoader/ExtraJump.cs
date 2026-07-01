@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Terraria.DataStructures;
+using Terraria.ID;
 
 namespace Terraria.ModLoader;
 
@@ -29,10 +30,24 @@ public abstract partial class ExtraJump : ModType
 
 	public static ExtraJump CloudInABottle { get; private set; } = new CloudInABottleJump();
 
+	public static ExtraJump DeadCellsDownDash { get; private set; } = new DeadCellsDownDashJump();
+
 	/// <summary>
 	/// The internal ID of this <see cref="ExtraJump"/>.
 	/// </summary>
 	public int Type { get; internal set; }
+
+	/// <summary>
+	/// If <see langword="true"/>, the ability from <see cref="ItemID.FlyingCarpet"/> will be blocked until this extra jump has been consumed.<br/>
+	/// Defaults to <see langword="true"/>.
+	/// </summary>
+	public bool OverridesCarpetFlight { get; protected set; } = true;
+
+	/// <summary>
+	/// If <see langword="true"/>, this extra jump will be stopped when <see cref="Player.jump"/> is zero.<br/>
+	/// Defaults to <see langword="true"/>.
+	/// </summary>
+	public bool ClearedWhenTimerExpires { get; protected set; } = true;
 
 	protected sealed override void Register()
 	{
@@ -66,7 +81,7 @@ public abstract partial class ExtraJump : ModType
 
 	/// <summary>
 	/// Spawn effects that should appear while the player is performing this jump here.<br/>
-	/// Only runs while the jump is <see cref="ExtraJumpState.Active"/> <br/>
+	/// Only runs while <see cref="ExtraJumpState.Active"/> is <see langword="true"/><br/>
 	/// For example, the Sandstorm in a Bottle's dusts are spawned here.
 	/// </summary>
 	/// <param name="player">The player performing the jump</param>
@@ -92,11 +107,15 @@ public abstract partial class ExtraJump : ModType
 	/// Sandstorm in a Bottle: 3<br/>
 	/// Santank mount: 2<br/>
 	/// Tsunami in a Bottle: 1.25<br/>
-	/// Unicorn mount: 2
+	/// Unicorn mount: 2<br/>
+	/// Ram Rune: 0
 	/// </para>
 	/// </summary>
 	/// <param name="player">The player performing the jump</param>
-	/// <returns>A modifier to the player's jump height, which when combined effectively acts as the duration for the jump</returns>
+	/// <returns>
+	/// A modifier to the player's jump height, which when combined effectively acts as the duration for the jump.<br/>
+	/// The duration has a lower cap of zero.
+	/// </returns>
 	public abstract float GetDurationMultiplier(Player player);
 
 	/// <summary>
@@ -107,19 +126,28 @@ public abstract partial class ExtraJump : ModType
 	public virtual bool CanStart(Player player) => true;
 
 	/// <summary>
-	/// This hook runs when the player uses this jump via pressing the jump key<br/>
+	/// This hook runs before the player's velocity is set by this extra jump.<br/>
+	/// Use this hook to set the player's velocity to something else, like how the dash ability from <see cref="ItemID.DeadCellsRamRune"/> forces a large initial downard velocity.
+	/// </summary>
+	/// <param name="player">The player that performing the jump</param>
+	/// <param name="duration">The duration of the extra jump.  See the summary <see cref="GetDurationMultiplier"/> for an in-depth explanation of how the duration works.</param>
+	/// <returns><see langword="true"/> to allow <see cref="Entity.velocity"/> and <see cref="Player.jump"/> to be set; <see langword="false"/> otherwise.</returns>
+	public virtual bool PreStart(Player player, float duration) => true;
+
+	/// <summary>
+	/// This hook runs when the player uses this jump via pressing the jump key.<br/>
 	/// Effects that should appear when the jump starts can be spawned here.<br/>
-	/// For example, the Cloud in a Bottle's initial puff of smoke is spawned here.<br/>
+	/// For example, the Cloud in a Bottle's jump spawns a puff of smoke.<br/>
 	/// <br/>
-	/// To make the jump re-usable, set <see cref="ExtraJumpState.Available"/> to  <see langword="true"/> <br/>
+	/// To make the jump re-usable, set <see cref="ExtraJumpState.Available"/> to <see langword="true"/><br/>
 	/// </summary>
 	/// <param name="player">The player performing the jump</param>
 	/// <param name="playSound">Whether the poof sound should play.  Set this parameter to <see langword="false"/> if you want to play a different sound.</param>
 	public virtual void OnStarted(Player player, ref bool playSound) { }
 
 	/// <summary>
-	/// This hook runs before <see cref="ExtraJumpState.Active"/> is set from <see langword="true"/> to <see langword="false"/><br/>
-	/// Jumps end when their duration expires or when <see cref="ExtraJumpState.Enabled"/> is no longer true. <br/>
+	/// This hook runs before this jump has ended.<br/>
+	/// Jumps end when their duration expires or when <see cref="ExtraJumpState.Enabled"/> is no longer <see langword="true"/>.<br/>
 	/// Jumps may end early via <see cref="Player.StopExtraJumpInProgress"/>, called when a grappling hook is thrown, the player grabs onto a rope, or when the player is frozen, turned to stone or webbed.
 	/// </summary>
 	/// <param name="player">The player that was performing the jump</param>
@@ -127,7 +155,7 @@ public abstract partial class ExtraJump : ModType
 
 	/// <summary>
 	/// Modify the player's horizontal movement while performing this jump here.<br/>
-	/// Only runs while the jump is <see cref="ExtraJumpState.Active"/> <br/>
+	/// Only runs while <see cref="ExtraJumpState.Active"/> is <see langword="true"/>.<br/>
 	/// <br/>
 	/// Vanilla's jumps use the following values:
 	/// <para>
@@ -146,7 +174,7 @@ public abstract partial class ExtraJump : ModType
 	public virtual void UpdateHorizontalSpeeds(Player player) { }
 
 	/// <summary>
-	/// This hook runs before <see cref="ExtraJumpState.Available"/> is set to <see langword="true"/> in <see cref="Player.RefreshDoubleJumps"/><br/>
+	/// This hook runs before <see cref="ExtraJumpState.Available"/> is set to <see langword="true"/> in <see cref="Player.RefreshExtraJumps"/><br/>
 	/// This occurs at the start of the grounded jump and while the player is grounded, or when jumping off a grappling hook/rope.
 	/// </summary>
 	/// <param name="player">The player instance</param>

@@ -26,7 +26,7 @@ public struct ExtraJumpState
 	/// This property is automatically set to <see langword="false"/> in ResetEffects.<br/>
 	/// When <see langword="false"/>, <see cref="Available"/> and <see cref="Active"/> will also be <see langword="false"/>.<br/>
 	/// </summary>
-	public bool Enabled => _enabled && !_disabled;
+	public readonly bool Enabled => _enabled && !_disabled;
 
 	/// <summary>
 	/// <see langword="true"/> if the extra jump has not been consumed. Will be set to <see langword="false"/> when the extra jump starts.<br/>
@@ -40,12 +40,11 @@ public struct ExtraJumpState
 	}
 
 	/// <summary>
-	/// Whether any effects (e.g. spawning dusts) should be performed after consuming the extra jump, but before its duration runs out.<br/>
-	/// This property returns <see langword="true"/> while the extra jump is in progress, and returns <see langword="false"/> otherwise.<br/>
+	/// <see langword="true"/> while the extra jump is in progress, and <see langword="false"/> otherwise.<br/>
 	/// While an extra jump is in progress, <see cref="ExtraJump.UpdateHorizontalSpeeds"/> and <see cref="ExtraJump.ShowVisuals"/> will be executed.<br/>
 	/// This property also checks <see cref="Enabled"/> when read.
 	/// </summary>
-	public bool Active => Enabled && _active;
+	public readonly bool Active => Enabled && _active;
 
 	/// <summary>
 	/// Sets this extra jump to usable for this game tick.<br/>
