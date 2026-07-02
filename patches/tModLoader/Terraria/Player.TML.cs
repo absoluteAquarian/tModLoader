@@ -98,6 +98,11 @@ public partial class Player : IEntityWithInstances<ModPlayer>
 	/// </summary>
 	public StatModifier PotionDelayModifier = StatModifier.Default;
 
+	/// <summary>
+	/// The default value for <see cref="rocketTimeMax"/>
+	/// </summary>
+	public const int DefaultRocketTimeMax = 7;
+
 	public RefReadOnlyArray<ModPlayer> ModPlayers => modPlayers;
 
 	RefReadOnlyArray<ModPlayer> IEntityWithInstances<ModPlayer>.Instances => modPlayers;

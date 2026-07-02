@@ -315,9 +315,13 @@
  	public float slotsMinions;
  	public bool pygmy;
  	public bool raven;
-@@ -865,7 +_,17 @@
+@@ -864,9 +_,25 @@
+ 	public bool deadCellsMushroomBoiMinion;
  	public bool palworldCattivaMinion;
  	public bool palworldFoxsparksMinion;
++	/// <summary>
++	/// A decrementing timer that controls the remaining duration of wings flight
++	/// </summary>
  	public float wingTime;
 +	/// <summary>
 +	/// The visible wings equipment slot (<see cref="ArmorIDs.Wing"/>). Usually corresponds to the <see cref="Item.wingSlot"/> of the visible wing accessory (unless hidden and either a mount is active or velocity.Y is 0) or vanity accessory.
@@ -331,8 +335,12 @@
 +	/// <br/><br/> Defaults to 0.
 +	/// </summary>
  	public int wingsLogic;
++	/// <summary>
++	/// The maximum value for <see cref="wingTime"/>
++	/// </summary>
  	public int wingTimeMax;
  	public int wingFrame;
+ 	public int wingFrameCounter;
 @@ -896,11 +_,24 @@
  	public bool dontHurtCritters;
  	public bool hasLucyTheAxe;
@@ -1075,7 +1083,7 @@
  	public bool hasJumpOption_Cloud;
  	public bool canJumpAgain_Cloud;
  	public bool isPerformingJump_Cloud;
-@@ -1546,16 +_,43 @@
+@@ -1546,30 +_,79 @@
  	public bool hasJumpOption_Basilisk;
  	public bool canJumpAgain_Basilisk;
  	public bool isPerformingJump_Basilisk;
@@ -1119,7 +1127,26 @@
  	public int blockRange;
  	public int[] grappling = new int[20];
  	public int grapCount;
-@@ -1566,10 +_,17 @@
++	/// <summary>
++	/// A decrementing timer that works with <see cref="rocketDelay"/> to control the remaining duration of boots flight from items like <see cref="ItemID.RocketBoots"/><br/>
++	/// The remaining duration is <c>rocketTime * 10 + rocketDelay</c>
++	/// </summary>
+ 	public int rocketTime;
++	/// <summary>
++	/// The maximum value for <see cref="rocketTime"/><br/>
++	/// The total duration of the boots flight will be <c>rocketTimeMax * 10</c> ticks
++	/// </summary>
+-	public int rocketTimeMax = 7;
++	public int rocketTimeMax = DefaultRocketTimeMax;
++	/// <summary>
++	/// A decrementing, looping timer that works with <see cref="rocketTime"/> to control the remaining duration of boots flight from items like <see cref="ItemID.RocketBoots"/><br/>
++	/// The remaining duration is <c>rocketTime * 10 + rocketDelay</c>
++	/// </summary>
+ 	public int rocketDelay;
++	/// <summary>
++	/// A looping timer used to play the <see cref="SoundID.Item13"/> or <see cref="SoundID.Item24"/> sounds when flying with items like <see cref="ItemID.RocketBoots"/> and certain wings
++	/// </summary>
+ 	public int rocketDelay2;
  	public int rocketSoundDelay;
  	public bool rocketRelease;
  	public bool rocketFrame;
@@ -1407,7 +1434,7 @@
  	public bool UsingSuperCart {
  		get {
  			if (!unlockedSuperCart)
-@@ -2356,12 +_,84 @@
+@@ -2356,12 +_,85 @@
  		}
  	}
  
@@ -1476,11 +1503,12 @@
 +		DisableCarpetHovering();
 +	}
 +
-+	private void ResetFlyingAbilityFlags()
++	private void ResetFlyingAbilities()
 +	{
 +		_bootFlightEnabled = true;
 +		_wingFlightEnabled = true;
 +		_carpetHoveringEnabled = true;
++		rocketTimeMax = DefaultRocketTimeMax;
 +	}
 +
 +	// NOTE: Seems to only be used by the new 1.4.5 developer wings, but was included anyway to keep it consistent with the above methods
@@ -3844,7 +3872,7 @@
  		hasLuck_WiltedClover = false;
 +		blockExtraJumps = false;
 +		ExtraJumpLoader.ResetEnableFlags(this);
-+		ResetFlyingAbilityFlags();
++		ResetFlyingAbilities();
 +		/*
  		hasJumpOption_Cloud = false;
  		hasJumpOption_Sail = false;
