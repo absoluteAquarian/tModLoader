@@ -286,6 +286,24 @@ public static class ExtraJumpLoader
 		}
 	}
 
+	internal static float GetJumpAscentSpeed(Player player)
+	{
+		if (TryGetActiveJump(player, out ExtraJump activeJump))
+			return GetJumpAscentSpeed(activeJump, player);
+
+		return Player.jumpSpeed;
+	}
+
+	private static float GetJumpAscentSpeed(ExtraJump jump, Player player)
+	{
+		StatModifier speed = StatModifier.Default;
+
+		jump.ModifyAscentSpeed(player, ref speed);
+		PlayerLoader.ModifyExtraJumpAscentSpeed(jump, player, ref speed);
+
+		return speed.ApplyTo(Player.jumpSpeed);
+	}
+
 	private static void PerformJump(ExtraJump jump, Player player)
 	{
 		// Set the jump duration
@@ -301,7 +319,7 @@ public static class ExtraJumpLoader
 
 		// This was solely implemented for the Ram Rune dash, but would be useful for mods who want non-conventional jumps
 		if (jump.PreStart(player, duration))
-			player.velocity.Y = -Player.jumpSpeed * player.gravDir;
+			player.velocity.Y = -1 * GetJumpAscentSpeed(jump, player) * player.gravDir;
 
 		player.jump = (int)(Player.jumpHeight * duration);
 

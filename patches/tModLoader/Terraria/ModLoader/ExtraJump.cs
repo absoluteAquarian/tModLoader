@@ -85,14 +85,17 @@ public abstract partial class ExtraJump : ModType
 	/// For example, the Sandstorm in a Bottle's dusts are spawned here.
 	/// </summary>
 	/// <param name="player">The player performing the jump</param>
-	public virtual void ShowVisuals(Player player) { }
+	public virtual void ShowVisuals(Player player)
+	{
+	}
 
 	/// <summary>
 	/// Return <see langword="false"/> to prevent <see cref="ShowVisuals(Player)"/> from executing.<br/>
 	/// By default, this hook returns whether the player is moving upwards with respect to <see cref="Player.gravDir"/>
 	/// </summary>
 	/// <param name="player">The player performing the jump</param>
-	public virtual bool CanShowVisuals(Player player) {
+	public virtual bool CanShowVisuals(Player player)
+	{
 		return (player.gravDir == 1f && player.velocity.Y < 0f) || (player.gravDir == -1f && player.velocity.Y > 0f);
 	}
 
@@ -123,7 +126,10 @@ public abstract partial class ExtraJump : ModType
 	/// </summary>
 	/// <param name="player">The player that would perform the jump</param>
 	/// <returns><see langword="true"/> to let the jump be started, <see langword="false"/> otherwise.</returns>
-	public virtual bool CanStart(Player player) => true;
+	public virtual bool CanStart(Player player)
+	{
+		return true;
+	}
 
 	/// <summary>
 	/// This hook runs before the player's velocity is set by this extra jump.<br/>
@@ -131,19 +137,34 @@ public abstract partial class ExtraJump : ModType
 	/// </summary>
 	/// <param name="player">The player that performing the jump</param>
 	/// <param name="duration">The duration of the extra jump.  See the summary <see cref="GetDurationMultiplier"/> for an in-depth explanation of how the duration works.</param>
-	/// <returns><see langword="true"/> to allow <see cref="Entity.velocity"/> and <see cref="Player.jump"/> to be set; <see langword="false"/> otherwise.</returns>
-	public virtual bool PreStart(Player player, float duration) => true;
+	/// <returns><see langword="true"/> to allow <see cref="Entity.velocity"/> to be set to the intended value; <see langword="false"/> otherwise.</returns>
+	public virtual bool PreStart(Player player, float duration)
+	{
+		return true;
+	}
 
 	/// <summary>
-	/// This hook runs when the player uses this jump via pressing the jump key.<br/>
-	/// Effects that should appear when the jump starts can be spawned here.<br/>
+	/// This hook runs when the player uses this extra jump via pressing the jump key.<br/>
+	/// Effects that should appear when the extra jump starts can be spawned here.<br/>
 	/// For example, the Cloud in a Bottle's jump spawns a puff of smoke.<br/>
 	/// <br/>
 	/// To make the jump re-usable, set <see cref="ExtraJumpState.Available"/> to <see langword="true"/><br/>
 	/// </summary>
 	/// <param name="player">The player performing the jump</param>
 	/// <param name="playSound">Whether the poof sound should play.  Set this parameter to <see langword="false"/> if you want to play a different sound.</param>
-	public virtual void OnStarted(Player player, ref bool playSound) { }
+	public virtual void OnStarted(Player player, ref bool playSound)
+	{
+	}
+
+	/// <summary>
+	/// Modify the player's vertical movement while performing this extra jump here.<br/>
+	/// Only runs while <see cref="ExtraJumpState.Active"/> is <see langword="true"/>.
+	/// </summary>
+	/// <param name="player">The player performing the jump</param>
+	/// <param name="speed">A modifier applied to the player's vertical velocity</param>
+	public virtual void ModifyAscentSpeed(Player player, ref StatModifier speed)
+	{
+	}
 
 	/// <summary>
 	/// This hook runs before this jump has ended.<br/>
@@ -151,7 +172,9 @@ public abstract partial class ExtraJump : ModType
 	/// Jumps may end early via <see cref="Player.StopExtraJumpInProgress"/>, called when a grappling hook is thrown, the player grabs onto a rope, or when the player is frozen, turned to stone or webbed.
 	/// </summary>
 	/// <param name="player">The player that was performing the jump</param>
-	public virtual void OnEnded(Player player) { }
+	public virtual void OnEnded(Player player)
+	{
+	}
 
 	/// <summary>
 	/// Modify the player's horizontal movement while performing this jump here.<br/>
@@ -171,12 +194,16 @@ public abstract partial class ExtraJump : ModType
 	/// </para>
 	/// </summary>
 	/// <param name="player">The player performing the jump</param>
-	public virtual void UpdateHorizontalSpeeds(Player player) { }
+	public virtual void UpdateHorizontalSpeeds(Player player)
+	{
+	}
 
 	/// <summary>
 	/// This hook runs before <see cref="ExtraJumpState.Available"/> is set to <see langword="true"/> in <see cref="Player.RefreshExtraJumps"/><br/>
 	/// This occurs at the start of the grounded jump and while the player is grounded, or when jumping off a grappling hook/rope.
 	/// </summary>
 	/// <param name="player">The player instance</param>
-	public virtual void OnRefreshed(Player player) { }
+	public virtual void OnRefreshed(Player player)
+	{
+	}
 }

@@ -3746,12 +3746,13 @@
  		hasFootball = false;
  		drawingFootball = false;
  		minionKB = 0f;
-@@ -14568,7 +_,7 @@
+@@ -14568,7 +_,9 @@
  		frogLegJumpBoost = false;
  		skyStoneEffects = false;
  		noFallDmg = false;
--		accFlipper = false;
-+		//accFlipper = false;
++		/*
+ 		accFlipper = false;
++		*/
  		deadCellsPotionStation = false;
  		spawnMax = false;
  		spaceGun = false;
@@ -4015,39 +4016,112 @@
  			for (int i = 0; i < num2; i++) {
  				WorldGen.KillTile_MakeTileDust(point.X, point.Y, tile);
  			}
-@@ -16195,7 +_,17 @@
+@@ -16195,11 +_,67 @@
  		}
  	}
  
-+	public bool StompNPCs(int damage, float knockback, int npcImmuneTime, int playerImmuneTime, DamageClass? damageType = null)
++	/// <summary>
++	/// Checks for collisions with NPCs around the bottom of the player's hitbox and strikes the first NPC found that can be struck by this player.<br/>
++	/// <b>NOTE:</b> Stomp collisions are only checked if the player is moving downward with respect to normal gravity.
++	/// </summary>
++	/// <param name="stats">The stats of the stomp attack</param>
++	/// <param name="victim">The NPC that was stomped by the player, or <see langword="null"/> if no NPC was stomped.</param>
++	/// <returns><see langword="true"/> if an NPC was stomped; otherwise, <see langword="false"/>.</returns>
++	public bool StompNPCs(StompStrike stats, out NPC victim)
 +	{
++		// TODO: Vanilla only permits stomping attacks while moving downward with respect to normal gravity.  Should modded stomps also have this restriction?
++		if (velocity.Y <= 0f) {
++			victim = null;
++			return false;
++		}
++
 +		Rectangle area = getRect();
 +		area.Offset(0, height - 1);
 +		area.Height = 2;
 +		area.Inflate(12, 6);
 +
-+		return CollideWithNPCs(area, GetTotalDamage(damageType ?? DamageClass.Default).ApplyTo(damage), knockback, npcImmuneTime, playerImmuneTime, damageType) > 0;
++		float Damage = GetTotalDamage(stats.DamageType ?? DamageClass.Default).ApplyTo(stats.Damage);
++		float Knockback = stats.Knockback;
++		int NPCImmuneTime = stats.NPCImmuneTicks;
++		int PlayerImmuneTime = stats.PlayerImmuneTicks;
++		DamageClass? damageType = stats.DamageType;
++
++		for (int i = 0; i < Main.maxNPCs; i++) {
++			NPC npc = Main.npc[i];
++
++			if (CollideWithNPCs_TryCollision(npc, area, Damage, Knockback, NPCImmuneTime, PlayerImmuneTime, damageType)) {
++				victim = npc;
++				PlayerLoader.OnStompNPC(this, victim, in stats);
++				return true;
++			}
++		}
++
++		victim = null;
++		return false;
 +	}
 +
++	/// <summary>
++	/// Checks for NPCs within the provided area and strikes the first NPC found that can be struck by this player.<br/>
++	/// This method is used by <see cref="ItemID.LawnMower"/>, mounts with a hitbox and stomp attacks from the slime mounts and <see cref="ItemID.DeadCellsRamRune"/>
++	/// </summary>
++	/// <param name="myRect">The collision area check</param>
++	/// <param name="Damage">The base damage of the collision attack</param>
++	/// <param name="Knockback">The knockback of the collision attack</param>
++	/// <param name="NPCImmuneTime">The duration in ticks of the invincibility frames given to the struck NPC</param>
++	/// <param name="PlayerImmuneTime">The duration in ticks of the invincibility frames given to the player if an NPC was struck</param>
++	/// <param name="damageType">
++	/// The damage type of the collision attack.<br/>
++	/// If <see langword="null"/>, the strike's modifiers will use <see cref="DamageClass.Default"/> (except for the armor penetration, which uses <see cref="DamageClass.Generic"/>).
++	/// </param>
++	/// <returns><c>1</c> if an NPC was struck; otherwise, <c>0</c>.</returns>
 -	public int CollideWithNPCs(Rectangle myRect, float Damage, float Knockback, int NPCImmuneTime, int PlayerImmuneTime)
 +	public int CollideWithNPCs(Rectangle myRect, float Damage, float Knockback, int NPCImmuneTime, int PlayerImmuneTime, DamageClass? damageType = null)
  	{
  		int num = 0;
  		for (int i = 0; i < Main.maxNPCs; i++) {
-@@ -16213,7 +_,7 @@
- 					num2 = 1;
+ 			NPC nPC = Main.npc[i];
++			if (CollideWithNPCs_TryCollision(nPC, myRect, Damage, Knockback, NPCImmuneTime, PlayerImmuneTime, damageType)) {
++			/*
+ 			if (!nPC.active || nPC.dontTakeDamage || nPC.friendly || nPC.immune[whoAmI] != 0 || !CanNPCBeHitByPlayerOrPlayerProjectile(nPC))
+ 				continue;
  
- 				if (whoAmI == Main.myPlayer)
--					ApplyDamageToNPC(nPC, (int)Damage, Knockback, num2, crit: false);
-+					ApplyDamageToNPC(nPC, (int)Damage, Knockback, num2, crit: false, damageType: damageType);
+@@ -16217,6 +_,7 @@
  
  				nPC.immune[whoAmI] = NPCImmuneTime;
  				GiveImmuneTimeForCollisionAttack(PlayerImmuneTime);
-@@ -16225,20 +_,71 @@
++			*/
+ 				num++;
+ 				break;
+ 			}
+@@ -16225,20 +_,96 @@
  		return num;
  	}
  
--	public void ApplyDamageToNPC(NPC npc, int damage, float knockback, int direction, bool crit)
++	private bool CollideWithNPCs_TryCollision(NPC nPC, Rectangle myRect, float Damage, float Knockback, int NPCImmuneTime, int PlayerImmuneTime, DamageClass? damageType)
++	{
++		if (!nPC.active || nPC.dontTakeDamage || nPC.friendly || nPC.immune[whoAmI] != 0 || !CanNPCBeHitByPlayerOrPlayerProjectile(nPC))
++			return false;
++
++		Rectangle rect = nPC.getRect();
++		if (myRect.Intersects(rect) && (nPC.noTileCollide || Collision.CanHit(position, width, height, nPC.position, nPC.width, nPC.height))) {
++			int num2 = direction;
++			if (velocity.X < 0f)
++				num2 = -1;
++
++			if (velocity.X > 0f)
++				num2 = 1;
++
++			if (whoAmI == Main.myPlayer)
++				ApplyDamageToNPC(nPC, (int)Damage, Knockback, num2, crit: false, damageType: damageType);
++
++			nPC.immune[whoAmI] = NPCImmuneTime;
++			GiveImmuneTimeForCollisionAttack(PlayerImmuneTime);
++			return true;
++		}
++
++		return false;
++	}
++
 +	/// <summary>
 +	/// Deals damage to an NPC (and syncs the hit in multiplayer). <br/>
 +	/// The damage will be affected by modifiers, armor pen, enemy resistances etc. <br/>
@@ -4062,6 +4136,7 @@
 +	/// <param name="crit">Whether or not the strike is a crit</param>
 +	/// <param name="damageType">Defaults to <see cref="DamageClass.Default"/></param>
 +	/// <param name="damageVariation">Whether to apply damage variation. Defaults to false.</param>
+-	public void ApplyDamageToNPC(NPC npc, int damage, float knockback, int direction, bool crit)
 +	public void ApplyDamageToNPC(NPC npc, int damage, float knockback, int direction, bool crit = false, DamageClass? damageType = null, bool damageVariation = false)
  	{
 +		if (!PlayerLoader.CanHitNPC(this, npc))
@@ -4116,7 +4191,7 @@
  
  		int num = BannerSystem.NPCtoBanner(npc.BannerID());
  		if (num >= 0)
-@@ -16301,9 +_,29 @@
+@@ -16301,8 +_,28 @@
  		return true;
  	}
  
@@ -4126,7 +4201,7 @@
 +		if (mount.Active && mount.Type == 43)
 +			SoundEngine.PlaySound(SoundID.Item168, base.Center);
 +
-+		velocity.Y = (0f - jumpSpeed) * gravDir;
++		velocity.Y = (0f - ExtraJumpLoader.GetJumpAscentSpeed(this)) * gravDir;
 +		jump = jumpHeight;
 +		if (portableStoolInfo.IsInUse) {
 +			portableStoolInfo.IsInUse = false;
@@ -4141,11 +4216,10 @@
 +
  	public void JumpMovement()
  	{
++		/*
  		if (mount.Active && mount.IsConsideredASlimeMount && wetSlime == 0 && velocity.Y > 0f) {
-+			/*
  			Rectangle rect = getRect();
  			rect.Offset(0, height - 1);
- 			rect.Height = 2;
 @@ -16325,7 +_,7 @@
  						num2 = 1;
  
@@ -4155,45 +4229,16 @@
  
  					nPC.immune[whoAmI] = 10;
  					velocity.Y = -10f;
-@@ -16333,8 +_,13 @@
- 					break;
- 				}
- 			}
-+			*/
-+
-+			if (StompNPCs(40, 5f, 10, 6, DamageClass.Summon))
-+				velocity.Y = -10f;
- 		}
- 
-+		/*
- 		if (isPerformingJump_DownDash && velocity.Y > 0f) {
- 			Rectangle rect3 = getRect();
- 			rect3.Offset(0, height - 1);
-@@ -16365,8 +_,13 @@
+@@ -16396,14 +_,19 @@
  				}
  			}
  		}
 +		*/
 +
-+		if (GetJumpState<DeadCellsDownDashJump>().Active && velocity.Y > 0f)
-+			StompNPCs(40, 5f, 10, 6, DamageClass.Summon);
- 
- 		if (mount.Active && mount.Type == 17 && velocity.Y > 0f) {
-+			/*
- 			Rectangle rect5 = getRect();
- 			rect5.Offset(0, height - 1);
- 			rect5.Height = 2;
-@@ -16395,6 +_,9 @@
- 					break;
- 				}
- 			}
-+			*/
-+
-+			StompNPCs(40, 5f, 12, 12);
- 		}
++		StompAbilityLoader.HandleStompCollisions(this);
  
  		if (controlJump) {
-@@ -16402,8 +_,10 @@
+ 			if (sliding)
  				autoJump = false;
  
  			bool flag = false;
@@ -4204,6 +4249,15 @@
  			if (mount.Active && mount.IsConsideredASlimeMount && wetSlime > 0) {
  				wetSlime = 0;
  				flag = true;
+@@ -16417,7 +_,7 @@
+ 					jump = 0;
+ 				}
+ 				else {
+-					velocity.Y = (0f - jumpSpeed) * gravDir;
++					velocity.Y = (0f - ExtraJumpLoader.GetJumpAscentSpeed(this)) * gravDir;
+ 					if (merman && (!mount.Active || !mount.Cart)) {
+ 						if (swimTime <= 10)
+ 							swimTime = 30;
 @@ -16427,7 +_,7 @@
  					}
  				}
@@ -4245,11 +4299,12 @@
  					if (mount.Active && mount.Type == 43)
  						SoundEngine.PlaySound(SoundID.Item168, base.Center);
  
-@@ -16516,7 +_,13 @@
+@@ -16516,7 +_,14 @@
  
  					if (sliding)
  						velocity.X = 3 * -slideDir;
 +					*/
++					// Patch context: The above section of code was moved to a method to allow the Flipper to always have the same logic as grounded jumps
 +					PerformNormalJump();
  				}
 +				else if (attemptDoubleJumps && !blockExtraJumps) {
@@ -5107,15 +5162,34 @@
  		float num109 = 0.5f;
  		float num110 = 0.5f;
  		float movementSpeed = 0.25f;
-@@ -22542,7 +_,7 @@
+@@ -22527,6 +_,7 @@
+ 			}
+ 			else {
+ 				DryCollision(fallThrough, flag29);
++				/*
+ 				if (mount.Active && mount.IsConsideredASlimeMount && velocity.Y != 0f && !SlimeDontHyperJump) {
+ 					Vector2 vector7 = velocity;
+ 					velocity.X = 0f;
+@@ -22540,14 +_,19 @@
+ 					DryCollision(fallThrough, flag29);
+ 					velocity.X = vector8.X;
  				}
++				*/
  			}
  
--			if (isPerformingJump_DownDash && velocity.Y != 0f) {
-+			if (GetJumpState<DeadCellsDownDashJump>().Active && velocity.Y != 0f) {
++			StompAbilityLoader.HandleFastFall(this, fallThrough, flag29);
++
++			/*
+ 			if (isPerformingJump_DownDash && velocity.Y != 0f) {
  				Vector2 vector9 = velocity;
  				velocity.X = 0f;
  				DryCollision(fallThrough, flag29);
+ 				velocity.X = vector9.X;
+ 			}
++			*/
+ 		}
+ 
+ 		UpdateTouchingTiles();
 @@ -22610,6 +_,9 @@
  		if (statMana > statManaMax2)
  			statMana = statManaMax2;

@@ -5508,7 +5508,7 @@
  				num = 12;
  				text3 = Lang.inter[106].Value;
  				player[myPlayer].checkDPSTime();
-@@ -40591,7 +_,10 @@
+@@ -40591,11 +_,17 @@
  					text2 = Language.GetTextValue("GameUI.DPS", player[myPlayer].getDPS());
  				}
  			}
@@ -5519,6 +5519,13 @@
  				num = 9;
  				text3 = Lang.inter[103].Value;
  				Vector2 vector = player[myPlayer].velocity + player[myPlayer].instantMovementAccumulatedThisFrame;
++				/*
+ 				if (player[myPlayer].mount.Active && player[myPlayer].mount.IsConsideredASlimeMount && player[myPlayer].velocity.Y != 0f && !player[myPlayer].SlimeDontHyperJump)
++				*/
++				if (StompAbilityLoader.ShouldBeFastFalling(player[myPlayer]))
+ 					vector.Y += player[myPlayer].velocity.Y;
+ 
+ 				int num15 = (int)(1f + vector.Length() * 6f);
 @@ -40631,14 +_,20 @@
  				text2 = Language.GetTextValue("GameUI.Speed", Math.Round(num20));
  				flag9 = true;

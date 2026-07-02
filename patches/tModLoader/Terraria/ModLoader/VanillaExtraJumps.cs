@@ -24,6 +24,14 @@ public sealed class FlipperJump : VanillaExtraJump
 		return (!player.mount.Active || !player.mount.Cart) && player.wet;
 	}
 
+	public override bool PreStart(Player player, float duration)
+	{
+		// Flippers mimic normal grounded jumps
+		// NOTE: This method sets "Player.jump", but the rest of ExtraJumpLoader.PerformJump() will overwrite it with the correct value
+		player.PerformNormalJump();
+		return false;
+	}
+
 	public override void OnStarted(Player player, ref bool playSound)
 	{
 		if (player.swimTime == 0)

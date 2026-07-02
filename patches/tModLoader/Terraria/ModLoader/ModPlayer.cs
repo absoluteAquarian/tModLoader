@@ -389,6 +389,15 @@ public abstract class ModPlayer : ModType<Player, ModPlayer>, IIndexed
 	}
 
 	/// <summary>
+	/// Modify the player's vertical movement while performing an extra jump here.
+	/// </summary>
+	/// <param name="jump">The jump being performed</param>
+	/// <param name="speed">A modifier applied to the player's vertical velocity</param>
+	public virtual void ModifyExtraJumpAscentSpeed(ExtraJump jump, ref StatModifier speed)
+	{
+	}
+
+	/// <summary>
 	/// This hook runs before the <see cref="ExtraJumpState.Active"/> flag for an extra jump is set from <see langword="true"/> to <see langword="false"/> when the extra jump's duration has expired
 	/// <para/> This occurs when a grappling hook is thrown, the player grabs onto a rope, the jump's duration has finished and when the player's frozen, turned to stone or webbed.
 	/// <para/> Called on local, server, and remote clients.
@@ -428,11 +437,12 @@ public abstract class ModPlayer : ModType<Player, ModPlayer>, IIndexed
 	}
 
 	/// <summary>
-	/// Allows you to handle stomp abilities like the slime mounts and the <see cref="ItemID.DeadCellsRamRune"/> dash while the player is downward in normal gravity.
+	/// This hook allows you to do something after the player has stomped an NPC via <see cref="Player.StompNPCs"/>
 	/// </summary>
-	public virtual void HandleStompAbilities()
+	/// <param name="victim">The NPC that was stomped</param>
+	/// <param name="stats">The stats of the stomp attack</param>
+	public virtual void OnStompNPC(NPC victim, in StompStrike stats)
 	{
-
 	}
 
 	/// <summary>

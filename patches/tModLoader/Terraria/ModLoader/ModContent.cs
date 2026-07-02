@@ -437,6 +437,7 @@ public static class ModContent
 		EffectsTracker.CacheVanillaState();
 		DamageClassLoader.RegisterDefaultClasses();
 		ExtraJumpLoader.RegisterDefaultJumps();
+		StompAbilityLoader.RegisterDefaultAbilities();
 		InfoDisplayLoader.RegisterDefaultDisplays();
 		BuilderToggleLoader.RegisterDefaultToggles();
 	}
@@ -554,6 +555,7 @@ public static class ModContent
 		InfoDisplayLoader.Unload();
 		BuilderToggleLoader.Unload();
 		ExtraJumpLoader.Unload();
+		StompAbilityLoader.Unload();
 		GoreLoader.Unload();
 		PlantLoader.UnloadPlants();
 		HairLoader.Unload();

@@ -392,7 +392,8 @@ public static class PlayerLoader
 			try {
 				if (!modPlayer.CanStartExtraJump(jump))
 					return false;
-			} catch { }
+			} catch {
+			}
 		}
 
 		return true;
@@ -405,6 +406,21 @@ public static class PlayerLoader
 	{
 		foreach (var modPlayer in HookOnExtraJumpStarted.Enumerate(player)) {
 			try { modPlayer.OnExtraJumpStarted(jump, ref playSound); } catch { }
+		}
+	}
+
+	private delegate void DelegateModifyExtraJumpAscentSpeed(ExtraJump jump, ref StatModifier speed);
+	private static HookList HookModifyExtraJumpAscentSpeed = AddHook<DelegateModifyExtraJumpAscentSpeed>(p => p.ModifyExtraJumpAscentSpeed);
+
+	public static void ModifyExtraJumpAscentSpeed(ExtraJump jump, Player player, ref StatModifier speed)
+	{
+		foreach (var modPlayer in HookModifyExtraJumpAscentSpeed.Enumerate(player)) {
+			try {
+				StatModifier modifier = StatModifier.Default;
+				modPlayer.ModifyExtraJumpAscentSpeed(jump, ref modifier);
+				speed = speed.CombineWith(modifier);
+			} catch {
+			}
 		}
 	}
 
@@ -443,10 +459,21 @@ public static class PlayerLoader
 			try {
 				if (!modPlayer.CanShowExtraJumpVisuals(jump))
 					return false;
-			} catch { }
+			} catch {
+			}
 		}
 
 		return true;
+	}
+
+	private delegate void DelegateOnStompNPC(NPC victim, in StompStrike stats);
+	private static HookList HookOnStompNPC = AddHook<DelegateOnStompNPC>(p => p.OnStompNPC);
+
+	public static void OnStompNPC(Player player, NPC victim, in StompStrike stats)
+	{
+		foreach (var modPlayer in HookOnStompNPC.Enumerate(player)) {
+			try { modPlayer.OnStompNPC(victim, in stats); } catch { }
+		}
 	}
 
 	private static HookList HookFrameEffects = AddHook<Action>(p => p.FrameEffects);
