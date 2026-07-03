@@ -5107,6 +5107,19 @@
  			HorizontalMovement();
  			bool flag18 = !mount.Active;
  			if (forcedGravity > 0) {
+@@ -21368,7 +_,12 @@
+ 			if (wingsLogic > 0 || mount.Active)
+ 				sandStorm = false;
+ 
++			// Assuming that this conditional has to do with checking if an extra jump isn't in progress.
++			// This change is necessary to allow the ascent speed for extra jumps to be modifiable.
++			/*
+ 			if (((gravDir == 1f && velocity.Y > 0f - jumpSpeed) || (gravDir == -1f && velocity.Y < jumpSpeed)) && velocity.Y != 0f)
++			*/
++			if (velocity.Y != 0f && !IsPerformingAnExtraJump())
+ 				canRocket = true;
+ 
+ 			bool flag19 = false;
 @@ -21383,10 +_,14 @@
  			if (wingsLogic > 0 && controlJump && wingTime > 0f && jump == 0 && velocity.Y != 0f)
  				flag19 = true;
